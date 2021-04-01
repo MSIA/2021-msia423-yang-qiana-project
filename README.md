@@ -1,5 +1,9 @@
 # MSiA423 Template Repository
 
+Qiana Yang, with QA contributions from Louis-Charles Généreux
+
+Northwestern University MS in Analytics Course Project: Analytics Value Chain
+
 <!-- toc -->
 
 - [Directory structure](#directory-structure)
