@@ -24,7 +24,7 @@ Although the app will ultimately rely on real-time data from its user base, it w
 
 *Machine learning performance metric:* 
 
-Because the recommendation system employs unsupervised learning algorithms, we will use a number of non-traditional model/feature selection metrics to ensure the robustness of our approach. For now, we will rely on the silhoutte score and reduction in MSE to select the optimal number of clusters, and use the Kaiser criteria for dimensionality reduction and factor analysis. Since the method is unsupervised, there's no hard success threshold we can aim for &ndash; however, I hope to retain features that capture around 95% of the variation in the data as I perform factor analysis.
+Because the recommendation system employs unsupervised learning algorithms, we will use a number of non-traditional model/feature selection metrics to ensure the robustness of our approach. For now, we will rely on the silhoutte score and reduction in SSE to select the optimal number of clusters, and use the Kaiser criteria for dimensionality reduction and factor analysis. Since the method is unsupervised, there's no hard success threshold we can aim for &ndash; however, I hope to retain features that capture around 95% of the variation in the data as I perform factor analysis.
 
 Once the app is launched, we can then calculate the precision, recall, AUC, and F1 score of our recommendation engine based on dynamic user feedback. Tinder's current algorithm has an astonishing AUC of 90% and F1 of 85% &ndash; these are the numbers I'll be aiming for. 
 
