@@ -6,7 +6,7 @@ Northwestern University MS in Analytics Course Project: Analytics Value Chain
 
 ## Project Charter
 
-Perhaps you are an MSiA student new to the program, hoping to find compatible partners for group projects. Or perhaps you are a singleton in search of a perfect match without resorting to traditional dating apps. Whether you're in need of a new friend or looking to form deep bonds with a like-minded soul, a reciprocal recommendation system can give you a little nudge to build a meaningful connection with the right person at the right time. 
+Perhaps you are an MSiA student new to the program, hoping to find compatible partners for group projects. Or perhaps you are a singleton in search of a perfect match without resorting to traditional dating apps. Whether you're in need of a new friend or looking to form deep bonds with a like-minded person, a reciprocal recommendation system can give you a little nudge to build a meaningful connection with the right person at the right time. 
 
 **Vision**
 
@@ -18,13 +18,13 @@ This app aims to help users find other users with similar personality traits. If
 
 Each app user will fill out Cattell's 16 personality survey to the best of their ability. Based on the survey results, the recommender will map the user to a vector in an embedding space with factor and clustering analyses. The recommender will then output a list of new user profiles based on their proximity to the first user profile.
 
-Although the app will ultimately rely on real-time data from its user base, it will use a static dataset for the initial launch. The dataset in question consists of approximately 50000 rows of anonymized user survey results publish on [openpsychometrics.org](openpsychometrics.org). An interactive version of the survey can be found at [openpsychometrics.org/tests/16PF.php](https://openpsychometrics.org/tests/16PF.php).
+Although the app will ultimately rely on real-time data from its user base, it will use a static dataset for the initial launch. The dataset in question consists of approximately 50000 rows of anonymized user survey results published on [openpsychometrics.org](openpsychometrics.org). An interactive version of the survey can be found at [openpsychometrics.org/tests/16PF.php](https://openpsychometrics.org/tests/16PF.php).
 
 **Success criteria**
 
 *Machine learning performance metric:* 
 
-Because the recommendation system employs unsupervised learning algorithms, we will rely on a number of non-traditional model/feature selection metrics to ensure the robustness of our approach. For now, we will use the silhoutte score and reduction in MSE to select the optimal number of clusters, and use the Kaiser criteria for dimensionality reduction and factor analysis. Since the method is unsupervised, there's no hard success threshold we can aim for &ndash; however, I hope to retain features that capture around 95% of the variation in the data as I perform factor analysis.
+Because the recommendation system employs unsupervised learning algorithms, we will use a number of non-traditional model/feature selection metrics to ensure the robustness of our approach. For now, we will rely on the silhoutte score and reduction in MSE to select the optimal number of clusters, and use the Kaiser criteria for dimensionality reduction and factor analysis. Since the method is unsupervised, there's no hard success threshold we can aim for &ndash; however, I hope to retain features that capture around 95% of the variation in the data as I perform factor analysis.
 
 Once the app is launched, we can then calculate the precision, recall, AUC, and F1 score of our recommendation engine based on dynamic user feedback. Tinder's current algorithm has an astonishing AUC of 90% and F1 of 85% &ndash; these are the numbers I'll be aiming for. 
 
