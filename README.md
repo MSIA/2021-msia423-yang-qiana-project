@@ -18,7 +18,7 @@ This app aims to help users find other users with similar personality traits. If
 
 Each app user will fill out Cattell's 16 personality survey to the best of their ability. Based on the survey results, the recommender will map the user to a vector in an embedding space with factor and clustering analyses. The recommender will then output a list of new user profiles based on their proximity to the first user profile.
 
-Although the app will ultimately rely on real-time data from its user base, it will use a static dataset for the initial launch. The dataset in question consists of approximately 50000 rows of anonymized user survey results published on [openpsychometrics.org](openpsychometrics.org) (download [here](http://openpsychometrics.org/_rawdata/16PF.zip). An interactive version of the survey can be found at [openpsychometrics.org/tests/16PF.php](https://openpsychometrics.org/tests/16PF.php).
+Although the app will ultimately rely on real-time data from its user base, it will use a static dataset for the initial launch. The dataset in question consists of approximately 50000 rows of anonymized user survey results published on [openpsychometrics.org](openpsychometrics.org) (download [here](http://openpsychometrics.org/_rawdata/16PF.zip)). An interactive version of the survey can be found at [openpsychometrics.org/tests/16PF.php](https://openpsychometrics.org/tests/16PF.php).
 
 **Success criteria**
 
@@ -32,7 +32,7 @@ Once the app is launched, we can then calculate the precision, recall, AUC, and 
 
 We can measure the business value of the app based on user acquisition rates, churn rates, user engagement metrics (e.g. average session duration and total time on app), and of course, the number of successful matches made based on user feedback (e.g. number of successful matches divided by total time on app per user).
 
-## To be revised...
+## Content
 
 <!-- toc -->
 
