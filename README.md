@@ -32,6 +32,7 @@ Once the app is launched, we can then calculate the precision, recall, AUC, and 
 
 We can measure the business value of the app based on user acquisition rates, churn rates, user engagement metrics (e.g. average session duration and total time on app), and of course, the number of successful matches made based on user feedback (e.g. number of successful matches divided by total time on app per user).
 
+
 ## Content
 
 <!-- toc -->
