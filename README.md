@@ -32,6 +32,48 @@ Once the app is launched, we can then calculate the precision, recall, AUC, and 
 
 We can measure the business value of the app based on user acquisition rates, churn rates, user engagement metrics (e.g. average session duration and total time on app), and of course, the number of successful matches made based on user feedback (e.g. number of successful matches divided by total time on app per user).
 
+## Midproject Checkpoint
+
+**Data download and S3 upload instructions**
+
+We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook) to an S3 bucket without saving the files locally.
+
+First, clone the repository and navigate to the root directory. Run the following commands to build a Docker image:
+```sh
+docker build -t qiana_project .
+```
+
+Once a Docker image is built, we will run src/ingest.py via the virtual environment with the following lines. But first, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.envion.get('AWS_SECRET_ACCESS_KEY')` do not return `None`):
+```sh
+docker run -it \
+    --env AWS_ACCESS_KEY_ID \
+    --env AWS_SECRET_ACCESS_KEY \
+    qiana_project src/ingest.py \
+    -b <s3_bucket_name> \
+    [-c] [<codebook_path>] \
+    [-d] [<data_path>]
+```
+Note that *s3_bucket_name* is a required argument. You may also specify custom codebook path or data path in S3. If nothing is set, the default filepaths are `'raw/codebook.txt'` and `'raw/data.csv'` respectively.
+
+**Database schema creation instructions**
+
+The environment variables we need for this step are MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, and DATABASE_NAME. Once these are set, run the following command:
+```
+docker run -it \
+    --env MYSQL_HOST \
+    --env MYSQL_PORT \
+    --env MYSQL_USER \
+    --env MYSQL_PASSWORD \
+    --env DATABASE_NAME \
+    qiana_project src/create_db.py \
+    [-e] [<engine_string>]
+```
+*engine_string* is an optional argument of the format `{conn_type}://{user}:{password}@{host}:{port}/{db_name}`. If it is not specified, then the default value would be set to `mysql+pysql://<MYSQL_USER>:<MYSQL_PASSWORD>@<MYSQL_HOST>:<MYSQL_PORT>/<DATABASE_NAME>`.
+
+If you are a Windows user, add `winpty` before each `docker run` statement. 
+
+If logging becomes an annoyance, change the logging configuration level in *src/config.py*.
+
 
 ## Content
 
