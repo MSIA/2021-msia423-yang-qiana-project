@@ -1,18 +1,18 @@
 import argparse
 
-import logging.config
-logging.config.fileConfig('config/logging/local.conf')
-logger = logging.getLogger('penny-lane-pipeline')
-
-from src.add_songs import TrackManager, create_db
+import src.ingest as ingest
 from config.flaskconfig import SQLALCHEMY_DATABASE_URI
 
 if __name__ == '__main__':
 
-    # Add parsers for both creating a database and adding songs to it
+    # Add parsers for downloading data and ingesting data
     parser = argparse.ArgumentParser(description="Create and/or add data to database")
-    subparsers = parser.add_subparsers(dest='subparser_name')
+    subparsers = parser.add_subparsers()
 
+    sb_upload = subparsers.add_parser("ingest.upload_data_to_s3", description="Upload data to s3")
+    sb_upload.add_argument("--")
+
+    '''
     # Sub-parser for creating a database
     sb_create = subparsers.add_parser("create_db", description="Create database")
     sb_create.add_argument("--engine_string", default=SQLALCHEMY_DATABASE_URI,
@@ -36,6 +36,6 @@ if __name__ == '__main__':
         tm.close()
     else:
         parser.print_help()
-
+    '''
 
 

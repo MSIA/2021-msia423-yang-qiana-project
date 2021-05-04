@@ -4,9 +4,9 @@ __pycache__/
 *.class
 .DS_Store
 .idea/
-.log
 .ipynb_checkpoints/
-
+.mysqlconfig
+.awsconfig
 
 data/*
 !data/sample/
