@@ -58,9 +58,9 @@ First, you need to set environment variables. Depending on which variables you h
 
 If `SQLALCHEMY_DATABASE_URI` is not provided as an environment variable, then the system will be looking for the environment variable `MYSQL_HOST` and attempt to create the database on RDS. For the command to successfully run at this step, you also need to set the following environment variables: MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, and DATABASE_NAME.
 
-If neither of these variables are provided, the system will create a local sqlite database at the default location `'./data/data.db'`. 
+If none of these variables are provided, the system will create a local sqlite database at the default location `'./data/data.db'`. 
 
-Finally, you may specify your own engine string in lieu of providing an environment variable. To do so, see the command line argument below.
+Finally, you may specify your own engine string in lieu of providing an environment variable. To do so, see the command line argument below. Note that if you specify your own engine string, that will override the default engine strings created by my script even if you have also created the environment variables I've talked about above.
 
 Once you have configured your environment variables, run the following command at root directory: 
 ```sh
