@@ -84,7 +84,7 @@ docker run -it \
     [-c] [<codebook_path>] \
     [-d] [<data_path>]
 ```
-Then, create database scheme in RDS (non-locally) with create_db.py:
+Then, create database schema in RDS (non-locally) with create_db.py:
 ```sh
 docker run -it \
     -e MYSQL_HOST \
@@ -92,6 +92,19 @@ docker run -it \
     -e MYSQL_USER \
     -e MYSQL_PASSWORD \
     -e DATABASE_NAME \
+    qiana_project -m src.create_db \
+    [-g] [<engine_string>]
+```
+You may also create the schema locally in the `data` directory (default filepath is `data/data.db`):
+```sh
+docker run -it \
+    qiana_project -m src.create_db \
+    [-g] [<engine_string>]
+```
+Or, specify your own engine string and output path with the `SQLALCHEMY_DATABASE_URI` environment variable:
+```
+docker run -it \
+    -e SQLALCHEMY_DATABASE_URI \
     qiana_project -m src.create_db \
     [-g] [<engine_string>]
 ```
