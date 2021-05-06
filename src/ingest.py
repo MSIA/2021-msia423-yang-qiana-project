@@ -8,9 +8,9 @@ import os
 import boto3
 import botocore.exceptions
 
-from config import logging, data_source
+from config.flaskconfig import logging, data_source
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('ingest')
 
 
 def download():
@@ -48,7 +48,7 @@ def upload_data_to_s3(s3_bucket, s3_path_codebook='raw/codebook.txt', s3_path_da
     # write csv to target path - keep the index as 'user'
     data.index.name = 'user'
     data.to_csv(f's3://{s3_bucket}/{s3_path_data}', index=True)
-    logger.info("Codebook and data uploaded.")
+    logger.info(f"Codebook and data uploaded to {s3_bucket}.")
 
 
 if __name__ == '__main__':

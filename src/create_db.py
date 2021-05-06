@@ -1,13 +1,12 @@
 import argparse
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, MetaData
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, Integer, String
 
-from config import logging, engine_string
+from config.flaskconfig import logging, sql_uri
 
 Base = declarative_base()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('create_db')
 
 
 class Survey(Base):
@@ -40,25 +39,28 @@ class Metadata(Base):
         return f'<Metadata user {self.user}'
 
 
-def create_new_db(eng_str=engine_string):
+def create_new_db(eng_str=sql_uri):
     """create new (empty) tables in AWS RDS"""
     try:
         engine = sqlalchemy.create_engine(eng_str)
         Base.metadata.create_all(engine)
-        logger.info("database created - run docker mysql to examine the new tables.")
+        logger.info(f"database created at {sql_uri}.")
     except sqlalchemy.exc.OperationalError:
         # Checking for correct credentials
         logger.error("create_db: Access denied! Please enter correct credentials")
 
 
 if __name__ == '__main__':
-    # allow user to specify custom function arguments
+    # allow user to specify custom engine strings; if not provided, default will be used
     ap = argparse.ArgumentParser(description="Pass custom engine string to create new database.")
-    ap.add_argument("-e", "--engine", required=False, type=str, help="rds_mysql_engine_string")
+    ap.add_argument("-g", "--eng_str", required=False, type=str, help="engine_string")
     arg = ap.parse_args()
 
-    # pass custom arguments to upload_data_to_s3
-    if arg.engine is None:
+    # run upload_data_to_s3
+    # if rds engine string not provided, system first searches sqlalchemy env variable for engine string
+    # then, system searches mysql credentials for engine string
+    # finally, system uses a default local sqlite credential for engine string
+    if arg.eng_str is None:
         create_new_db()
     else:
-        create_new_db(arg.engine)
+        create_new_db(arg.eng_str)

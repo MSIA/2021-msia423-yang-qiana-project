@@ -32,47 +32,75 @@ Once the app is launched, we can then calculate the precision, recall, AUC, and 
 
 We can measure the business value of the app based on user acquisition rates, churn rates, user engagement metrics (e.g. average session duration and total time on app), and of course, the number of successful matches made based on user feedback (e.g. number of successful matches divided by total time on app per user).
 
-## Midproject Checkpoint
+## Running the App (Midproject Checkpoint)
+### 1. Initialize the database 
+
+#### Create the database 
 
 **Data download and S3 upload instructions**
 
-We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook) to an S3 bucket without saving the files locally.
+We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook) to an S3 bucket without saving the files locally. The command to perform the task is as follows:
+
+```sh
+python -m src.ingest -b <s3_bucket_name> [-c] [<codebook_path>] [-d] [<data_path>]
+```
+When running the command, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.environ.get('AWS_SECRET_ACCESS_KEY')` do not return `None`).
+
+Note that you must specify a valid *s3_bucket_name* for successful data upload. You may also specify custom codebook path or data path in S3. The default filepaths are `'raw/codebook.txt'` and `'raw/data.csv'` respectively. 
+
+You also need to be connected to the Northwestern VPN to run the command.
+
+Finally, you may reset the logging configuration level in *config/flaskconfig.py*.
+
+**Database schema creation instructions**
+
+First, you need to set environment variables. Depending on which variables you have provided, different default values for SQLAlchemy's connection engine string will be set. You may specify your engine string with the environment variable `SQLALCHEMY_DATABASE_URI`.
+
+If `SQLALCHEMY_DATABASE_URI` is not provided as an environment variable, then the system will be looking for the environment variable `MYSQL_HOST` and attempt to create the database on RDS. For the command to successfully run at this step, you also need to set the following environment variables: MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, and DATABASE_NAME.
+
+If neither of these variables are provided, the system will create a local sqlite database at the default location `'./data/data.db'`. 
+
+Finally, you may specify your own engine string in lieu of providing an environment variable. To do so, see the command line argument below.
+
+Once you have configured your environment variables, run the following command at root directory: 
+```sh
+python -m src.create_db [-g] [<engine string>]
+```
+If you want to use your own custom engine string instead, simply specify the `-g` optional argument. Keep in mind that the format for engine strings is `{conn_type}://{user}:{password}@{host}:{port}/{db_name}`.
+
+**Run the Above Pipeline in Docker**
 
 First, clone the repository and navigate to the root directory. Run the following commands to build a Docker image:
 ```sh
 docker build -t qiana_project .
 ```
-
-Once a Docker image is built, we will run src/ingest.py via the virtual environment with the following lines. But first, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.envion.get('AWS_SECRET_ACCESS_KEY')` do not return `None`):
+Once a Docker image is built, we will run ingest.py with the following command:
 ```sh
 docker run -it \
-    --env AWS_ACCESS_KEY_ID \
-    --env AWS_SECRET_ACCESS_KEY \
-    qiana_project src/ingest.py \
+    -e AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY \
+    qiana_project -m src.ingest \
     -b <s3_bucket_name> \
     [-c] [<codebook_path>] \
     [-d] [<data_path>]
 ```
-Note that *s3_bucket_name* is a required argument. You may also specify custom codebook path or data path in S3. If nothing is set, the default filepaths are `'raw/codebook.txt'` and `'raw/data.csv'` respectively.
-
-**Database schema creation instructions**
-
-The environment variables we need for this step are MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, and DATABASE_NAME. Once these are set, run the following command:
-```
+Then, create database scheme with create_db.py:
+```sh
 docker run -it \
-    --env MYSQL_HOST \
-    --env MYSQL_PORT \
-    --env MYSQL_USER \
-    --env MYSQL_PASSWORD \
-    --env DATABASE_NAME \
-    qiana_project src/create_db.py \
-    [-e] [<engine_string>]
+    -e MYSQL_HOST \
+    -e MYSQL_PORT \
+    -e MYSQL_USER \
+    -e MYSQL_PASSWORD \
+    -e DATABASE_NAME \
+    qiana_project -m src.create_db \
+    [-g] [<engine_string>]
 ```
-*engine_string* is an optional argument of the format `{conn_type}://{user}:{password}@{host}:{port}/{db_name}`. If it is not specified, then the default value would be set to `mysql+pysql://<MYSQL_USER>:<MYSQL_PASSWORD>@<MYSQL_HOST>:<MYSQL_PORT>/<DATABASE_NAME>`.
-
 If you are a Windows user, add `winpty` before each `docker run` statement. 
 
-If logging becomes an annoyance, change the logging configuration level in *src/config.py*.
+**To Chloe and Fausto**
+1) I left some commented-out code in my scripts and some unused .py files from the template repo. Because this is a WIP, I don't want to delete currently unused code. Please do not take off points.
+3) I left my logging configurations in the flaskconfig.py file. This is for my own benefit, since I will still be developing the code. Please do not take off points.
+4) Please do not take off points due to these extra notes in README.md. Also note that my README still has information from the template repo. I will be continuing making changes to my repo structure, so I am hesitant to delete anything from the old repo.
 
 
 ## Content
@@ -140,45 +168,6 @@ If logging becomes an annoyance, change the logging configuration level in *src/
 ├── requirements.txt                  <- Python package dependencies 
 ```
 
-## Running the app
-### 1. Initialize the database 
-
-#### Create the database 
-To create the database in the location configured in `config.py` run: 
-
-`python run.py create_db --engine_string=<engine_string>`
-
-By default, `python run.py create_db` creates a database at `sqlite:///data/tracks.db`.
-
-#### Adding songs 
-To add songs to the database:
-
-`python run.py ingest --engine_string=<engine_string> --artist=<ARTIST> --title=<TITLE> --album=<ALBUM>`
-
-By default, `python run.py ingest` adds *Minor Cause* by Emancipator to the SQLite database located in `sqlite:///data/tracks.db`.
-
-#### Defining your engine string 
-A SQLAlchemy database connection is defined by a string with the following format:
-
-`dialect+driver://username:password@host:port/database`
-
-The `+dialect` is optional and if not provided, a default is used. For a more detailed description of what `dialect` and `driver` are and how a connection is made, you can see the documentation [here](https://docs.sqlalchemy.org/en/13/core/engines.html). We will cover SQLAlchemy and connection strings in the SQLAlchemy lab session on 
-##### Local SQLite database 
-
-A local SQLite database can be created for development and local testing. It does not require a username or password and replaces the host and port with the path to the database file: 
-
-```python
-engine_string='sqlite:///data/tracks.db'
-
-```
-
-The three `///` denote that it is a relative path to where the code is being run (which is from the root of this directory).
-
-You can also define the absolute path with four `////`, for example:
-
-```python
-engine_string = 'sqlite://///Users/cmawer/Repos/2020-MSIA423-template-repository/data/tracks.db'
-```
 
 
 ### 2. Configure Flask app 
