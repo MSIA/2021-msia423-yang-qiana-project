@@ -84,7 +84,7 @@ docker run -it \
     [-c] [<codebook_path>] \
     [-d] [<data_path>]
 ```
-Then, create database scheme with create_db.py:
+Then, create database scheme in RDS (non-locally) with create_db.py:
 ```sh
 docker run -it \
     -e MYSQL_HOST \
