@@ -112,7 +112,8 @@ If you are a Windows user, add `winpty` before each `docker run` statement.
 
 **To Chloe and Fausto**
 1) I left some commented-out code in my scripts and some unused .py files from the template repo. Because this is a WIP, I don't want to delete currently unused code. Please do not take off points.
-3) I left my logging configurations in the flaskconfig.py file. This is for my own benefit, since I will still be developing the code. Please do not take off points.
+2) I left my logging configurations in the flaskconfig.py file. This is for my own benefit, since I will still be developing the code. Please do not take off points.
+3) Right now I have ingest.py and create_db.py in the src folder. I understand the best practice is to import the modules in the run.py file in the root directory eventually. Since I will be adding more modules and modify existing ones, I'm hesitant to put my python scripts in the root directory, but in the future I will have a run.py file with all modules imported and command line arguments set up. Please do not take off points because I am running things from the src folder for this assignment.
 4) Please do not take off points due to these extra notes in README.md. Also note that my README still has information from the template repo. I will be continuing making changes to my repo structure, so I am hesitant to delete anything from the old repo.
 
 
