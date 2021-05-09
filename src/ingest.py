@@ -31,7 +31,15 @@ def download():
 
 
 def upload_data_to_s3(s3_bucket, s3_path_codebook='raw/codebook.txt', s3_path_data='raw/data.csv'):
-    """upload data and codebook to s3 bucket without saving the files locally"""
+    """upload data and codebook to s3 bucket without saving the files locally
+
+        Args:
+            s3_bucket: str - S3 bucket name
+            s3_path_codebook: str - filepath to codebook in S3
+            s3_path_data: str - filepath to data.csv in S3
+
+        Returns: None
+    """
     # download data
     data, codebook = download()
 
@@ -49,20 +57,3 @@ def upload_data_to_s3(s3_bucket, s3_path_codebook='raw/codebook.txt', s3_path_da
     data.index.name = 'user'
     data.to_csv(f's3://{s3_bucket}/{s3_path_data}', index=True)
     logger.info(f"Codebook and data uploaded to {s3_bucket}.")
-
-
-if __name__ == '__main__':
-
-    # allow user to specify custom function arguments
-    ap = argparse.ArgumentParser(description="Pass S3 bucket name and data paths to function.")
-    ap.add_argument("-b", "--bucket", required=True, type=str, help="s3_bucket_name")
-    ap.add_argument("-c", "--codebook", required=False, type=str, help="codebook_filepath")
-    ap.add_argument("-d", "--data", required=False, type=str, help="data_filepath")
-    arg = ap.parse_args()
-
-    # pass custom arguments to upload_data_to_s3
-    bucket = arg.bucket
-    cpath = arg.codebook if arg.codebook is not None else 'raw/codebook.txt'
-    dpath = arg.data if arg.data is not None else 'raw/data.csv'
-
-    upload_data_to_s3(bucket, cpath, dpath)

@@ -41,7 +41,13 @@ class Metadata(Base):
 
 
 def create_new_db(eng_str=sql_uri):
-    """create new (empty) tables in AWS RDS"""
+    """create database from provided engine string
+
+        Args:
+            eng_str: str - Engine string
+
+        Returns: None
+    """
     try:
         engine = sqlalchemy.create_engine(eng_str)
         Base.metadata.create_all(engine)
@@ -49,18 +55,3 @@ def create_new_db(eng_str=sql_uri):
     except sqlalchemy.exc.OperationalError:
         # Checking for correct credentials
         logger.error(f"create_db: Access to {eng_str} denied! Please enter correct credentials or check your VPN")
-
-
-if __name__ == '__main__':
-    # allow user to specify custom engine strings; if not provided, default will be used
-    ap = argparse.ArgumentParser(description="Pass custom engine string to create new database.")
-    ap.add_argument("-g", "--eng_str", required=False, type=str, help="engine_string")
-    arg = ap.parse_args()
-
-    # if rds engine string not provided, system first searches sqlalchemy env variable for engine string
-    # then, system searches mysql credentials for engine string
-    # finally, system uses a default local sqlite credential for engine string
-    if arg.eng_str is None:
-        create_new_db()
-    else:
-        create_new_db(arg.eng_str)

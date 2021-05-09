@@ -74,7 +74,7 @@ First, clone the repository and navigate to the root directory. Run the followin
 ```sh
 docker build -t qiana_project .
 ```
-Once a Docker image is built, we will run ingest.py with the following command:
+Once a Docker image is built, we will upload raw data to S3 with the following command:
 ```sh
 docker run -it \
     -e AWS_ACCESS_KEY_ID \
@@ -84,7 +84,7 @@ docker run -it \
     [-c] [<codebook_path>] \
     [-d] [<data_path>]
 ```
-Then, create database schema in RDS (non-locally) with create_db.py:
+Then, create database schema in RDS (non-locally) with the following command:
 ```sh
 docker run -it \
     -e MYSQL_HOST \
