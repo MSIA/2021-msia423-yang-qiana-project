@@ -1,4 +1,5 @@
 import argparse
+
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
@@ -44,10 +45,10 @@ def create_new_db(eng_str=sql_uri):
     try:
         engine = sqlalchemy.create_engine(eng_str)
         Base.metadata.create_all(engine)
-        logger.info(f"database created at {sql_uri}.")
+        logger.info(f"database created at {eng_str}.")
     except sqlalchemy.exc.OperationalError:
         # Checking for correct credentials
-        logger.error("create_db: Access denied! Please enter correct credentials")
+        logger.error(f"create_db: Access to {eng_str} denied! Please enter correct credentials or check your VPN")
 
 
 if __name__ == '__main__':
@@ -56,7 +57,6 @@ if __name__ == '__main__':
     ap.add_argument("-g", "--eng_str", required=False, type=str, help="engine_string")
     arg = ap.parse_args()
 
-    # run upload_data_to_s3
     # if rds engine string not provided, system first searches sqlalchemy env variable for engine string
     # then, system searches mysql credentials for engine string
     # finally, system uses a default local sqlite credential for engine string

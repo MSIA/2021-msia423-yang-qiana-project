@@ -42,7 +42,7 @@ We can measure the business value of the app based on user acquisition rates, ch
 We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook) to an S3 bucket without saving the files locally. The command to perform the task is as follows:
 
 ```sh
-python -m src.ingest -b <s3_bucket_name> [-c] [<codebook_path>] [-d] [<data_path>]
+python run.py ingest -b <s3_bucket_name> [-c] [<codebook_path>] [-d] [<data_path>]
 ```
 When running the command, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.environ.get('AWS_SECRET_ACCESS_KEY')` do not return `None`).
 
@@ -64,7 +64,7 @@ Finally, you may specify your own engine string in lieu of providing an environm
 
 Once you have configured your environment variables, run the following command at root directory: 
 ```sh
-python -m src.create_db [-g] [<engine string>]
+python run.py create_db [-g] [<engine string>]
 ```
 If you want to use your own custom engine string instead, simply specify the `-g` optional argument. Keep in mind that the format for engine strings is `{conn_type}://{user}:{password}@{host}:{port}/{db_name}`.
 
@@ -79,7 +79,7 @@ Once a Docker image is built, we will run ingest.py with the following command:
 docker run -it \
     -e AWS_ACCESS_KEY_ID \
     -e AWS_SECRET_ACCESS_KEY \
-    qiana_project -m src.ingest \
+    qiana_project run.py ingest \
     -b <s3_bucket_name> \
     [-c] [<codebook_path>] \
     [-d] [<data_path>]
@@ -92,29 +92,28 @@ docker run -it \
     -e MYSQL_USER \
     -e MYSQL_PASSWORD \
     -e DATABASE_NAME \
-    qiana_project -m src.create_db \
+    qiana_project run.py create_db \
     [-g] [<engine_string>]
 ```
 You may also create the schema locally in the `data` directory (default filepath is `data/data.db`):
 ```sh
 docker run -it \
-    qiana_project -m src.create_db \
+    qiana_project run.py create_db \
     [-g] [<engine_string>]
 ```
 Or, specify your own engine string and output path with the `SQLALCHEMY_DATABASE_URI` environment variable:
 ```
 docker run -it \
     -e SQLALCHEMY_DATABASE_URI \
-    qiana_project -m src.create_db \
+    qiana_project run.py create_db \
     [-g] [<engine_string>]
 ```
 If you are a Windows user, add `winpty` before each `docker run` statement. 
 
 **To Chloe and Fausto**
 1) I left some commented-out code in my scripts and some unused .py files from the template repo. Because this is a WIP, I don't want to delete currently unused code. Please do not take off points.
-2) I left my logging configurations in the flaskconfig.py file. This is for my own benefit, since I will still be developing the code. Please do not take off points.
-3) Right now I have ingest.py and create_db.py in the src folder. I understand the best practice is to import the modules in the run.py file in the root directory eventually. Since I will be adding more modules and modify existing ones, I'm hesitant to put my python scripts in the root directory, but in the future I will have a run.py file with all modules imported and command line arguments set up. Please do not take off points because I am running things from the src folder for this assignment.
-4) Please do not take off points due to these extra notes in README.md. Also note that my README still has information from the template repo. I will be continuing making changes to my repo structure, so I am hesitant to delete anything from the old repo.
+2) I left my logging configurations in the flaskconfig.py file and set the level to 'INFO'. This is for my own benefit, since I will still be developing the code. Please do not take off points.
+3) Please do not take off points due to these extra notes in README.md. Also note that my README still has information from the template repo. I will be continuing making changes to my repo structure, so I am hesitant to delete anything from the old repo.
 
 
 ## Content

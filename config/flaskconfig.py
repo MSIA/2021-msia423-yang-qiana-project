@@ -1,6 +1,5 @@
 import logging
 import os
-from pathlib import Path
 
 # logging configurations
 logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
@@ -9,7 +8,6 @@ logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
 
 # data source
 data_source = 'http://openpsychometrics.org/_rawdata/16PF.zip'
-output_data_filepath = str((Path(__file__).parent / '..' / 'data').absolute())
 
 # mysql rds credentials
 conn_type = "mysql+pymysql"
@@ -23,7 +21,7 @@ db_name = os.environ.get("DATABASE_NAME")
 sql_uri = os.environ.get('SQLALCHEMY_DATABASE_URI')
 if sql_uri is None:
     if host is None:
-        sql_uri = f'sqlite:////{output_data_filepath}/data.db'
+        sql_uri = f'sqlite:///data/data.db'
     else:
         sql_uri = f"{conn_type}://{user}:{password}@{host}:{port}/{db_name}"
 
