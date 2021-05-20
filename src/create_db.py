@@ -119,3 +119,16 @@ class SurveyManager:
         session.add(metadata_record)
         session.commit()
         logger.info(f'User {user}: metadata added to database.')
+
+    def add_initial_static_data(self):
+        """Add initial raw data into database."""
+        # read from s3
+
+        # split dataframe into two dataframes in the format of the tables
+
+        # ingest
+        session = self.session
+
+    def clear_table(self, table):
+        """Clear table in case things go wrong in the data ingestion process."""
+        pass

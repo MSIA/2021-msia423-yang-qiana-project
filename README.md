@@ -110,11 +110,6 @@ docker run -it \
 ```
 If you are a Windows user, add `winpty` before each `docker run` statement. 
 
-**To Chloe and Fausto**
-1) I left some commented-out code in my scripts and some unused .py files from the template repo. Because this is a WIP, I don't want to delete currently unused code. Please do not take off points.
-2) I left my logging configurations in the flaskconfig.py file and set the level to 'INFO'. This is for my own benefit, since I will still be developing the code. Please do not take off points.
-3) Please do not take off points due to these extra notes in README.md. Also note that my README still has information from the template repo. I will be continuing making changes to my repo structure, so I am hesitant to delete anything from the old repo.
-
 
 ## Content
 
