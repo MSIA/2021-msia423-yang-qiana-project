@@ -41,10 +41,15 @@ We can measure the business value of the app based on user acquisition rates, ch
 
 We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook that explains different fields in the data columns) to an S3 bucket without saving the files locally. The command to perform the task is as follows:
 
-```sh
+```shell script
 python run.py ingest -b <s3_bucket_name> [-c] [<codebook_path>] [-d] [<data_path>]
 ```
-When running the command, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.environ.get('AWS_SECRET_ACCESS_KEY')` do not return `None`).
+When running the command, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.environ.get('AWS_SECRET_ACCESS_KEY')` do not return `None`). You can do so via the following command:
+
+```shell script
+export AWS_ACCESS_KEY_ID='<aws_access_key_id>'
+export AWS_SECRET_ACCESS_KEY='<aws_secret_access_key>'
+```
 
 Note that you must specify a valid *s3_bucket_name* for successful data upload. You may also specify custom codebook path or data path in S3. The default filepaths are `'raw/codebook.txt'` and `'raw/data.csv'` respectively. 
 
@@ -110,7 +115,7 @@ docker run -it \
 ```
 If you are a Windows user, add `winpty` before each `docker run` statement. 
 
-
+### To Be Edited...
 ## Content
 
 <!-- toc -->
