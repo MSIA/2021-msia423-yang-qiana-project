@@ -1,41 +1,38 @@
 import argparse
 
-import logging.config
-logging.config.fileConfig('config/logging/local.conf')
-logger = logging.getLogger('penny-lane-pipeline')
-
-from src.add_songs import TrackManager, create_db
-from config.flaskconfig import SQLALCHEMY_DATABASE_URI
+import src.ingest as ingest
+import src.create_db as create_db
 
 if __name__ == '__main__':
 
-    # Add parsers for both creating a database and adding songs to it
+    # Add parsers for data ingestion pipeline
     parser = argparse.ArgumentParser(description="Create and/or add data to database")
-    subparsers = parser.add_subparsers(dest='subparser_name')
+    subparsers = parser.add_subparsers(dest='command')
+
+    # Sub-parser for downloading data and uploading to S3
+    sb_upload = subparsers.add_parser("ingest", description="Upload data to s3")
+    sb_upload.add_argument("-b", "--bucket", required=True, type=str, help="s3_bucket_name")
+    sb_upload.add_argument("-c", "--codebook", default='raw/codebook.txt', type=str, help="codebook_filepath")
+    sb_upload.add_argument("-d", "--data", default='raw/data.csv', type=str, help="data_filepath")
 
     # Sub-parser for creating a database
     sb_create = subparsers.add_parser("create_db", description="Create database")
-    sb_create.add_argument("--engine_string", default=SQLALCHEMY_DATABASE_URI,
-                           help="SQLAlchemy connection URI for database")
-
-    # Sub-parser for ingesting new data
-    sb_ingest = subparsers.add_parser("ingest", description="Add data to database")
-    sb_ingest.add_argument("--artist", default="Emancipator", help="Artist of song to be added")
-    sb_ingest.add_argument("--title", default="Minor Cause", help="Title of song to be added")
-    sb_ingest.add_argument("--album", default="Dusk to Dawn", help="Album of song being added")
-    sb_ingest.add_argument("--engine_string", default='sqlite:///data/tracks.db',
-                           help="SQLAlchemy connection URI for database")
+    sb_create.add_argument("-g", "--eng_str", required=False, type=str, help="engine_string")
 
     args = parser.parse_args()
-    sp_used = args.subparser_name
+    sp_used = args.command
+
     if sp_used == 'create_db':
-        create_db(args.engine_string)
+        # if rds engine string not provided, system first searches sqlalchemy env variable for engine string
+        # then, system searches mysql credentials for engine string
+        # finally, system uses a default local sqlite credential for engine string
+        if args.eng_str is None:
+            create_db.create_new_db()
+        else:
+            create_db.create_new_db(args.eng_str)
     elif sp_used == 'ingest':
-        tm = TrackManager(engine_string=args.engine_string)
-        tm.add_track(args.title, args.artist, args.album)
-        tm.close()
+        ingest.upload_data_to_s3(args.bucket, args.codebook, args.data)
     else:
         parser.print_help()
-
 
 

@@ -2,11 +2,12 @@ __pycache__/
 *.pyc
 *.py[cod]
 *.class
+*.ipynb
 .DS_Store
 .idea/
-.log
 .ipynb_checkpoints/
-
+.mysqlconfig
+.awsconfig
 
 data/*
 !data/sample/
