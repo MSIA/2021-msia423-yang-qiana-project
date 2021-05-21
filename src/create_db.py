@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from flask_sqlalchemy import SQLAlchemy
 
 from config.flaskconfig import logging, sql_uri
+from src.modeling import OfflineModeling
 
 Base = declarative_base()
 logger = logging.getLogger('create_db')
@@ -96,6 +97,71 @@ class SurveyManager:
         session.commit()
         logger.info(f"User {user}'s record added to database.")
 
-    def clear_table(self, table):
+    def clear_table(self):
         """Clear table in case things go wrong in the data ingestion process."""
-        pass
+        session = self.session
+
+        try:
+            session.query('user_data').delete()
+            session.commit()
+        except Exception:
+            session.rollback()
+
+    def upload_seed_data_to_rds(self, s3_bucket, data_path, codebook_path):
+        """upload reduced features and cluster assignment to rds
+
+        Returns: None
+        """
+        session = self.session
+
+        # prepare data for bulk upload
+        offline_model = OfflineModeling(s3_bucket, data_path, codebook_path)
+        pca_features, ca_labels = offline_model.initialize_models()
+        users = offline_model.data.user.values
+        metadata = offline_model.data.iloc[: 164:].values
+
+        # reformat data
+        records = [UserData(users[i], *pca_features[i], ca_labels[i], metadata[i][0], metadata[i][1], metadata[i][3])
+                   for i in range(len(users))]
+
+        logging.debug(f'The first record in the database is: {records[0]}')
+
+        try:
+            session.add_all(records)
+            session.commit()
+            logging.info('records committed to database.')
+        except Exception:
+            logging.error('something is wrong')
+            session.rollback()
+
+    def upload_realtime_data_to_rds(self, row):
+        """transform and upload realtime user input data to rds
+
+        Args:
+            TBA
+
+        Returns: None
+        """
+        raw_survey = None
+        metadata = None
+
+        try:
+            transformed_survey = self.fa.transform(raw_survey)
+        except Exception:
+            logging.error('data cannot be transformed; check if factor analysis model is fitted on seed dataset.')
+
+        try:
+            cluster = self.ca.predict(transformed_survey)[0]
+        except Exception:
+            logging.error('data cannot be assigned a cluster; check if cluster analysis model is fitted on seed '
+                          'dataset.')
+
+        # transformed_survey
+        # cluster
+        # metadata
+        # session.add_user_record(something)
+
+if __name__ == '__main__':
+    obj = SurveyManager()
+    obj.upload_seed_data_to_rds('2021-msia423-yang-qiana', 'raw/codebook.txt', 'raw/data.csv')
+    # obj.clear_table()

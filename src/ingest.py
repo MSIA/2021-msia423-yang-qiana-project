@@ -29,7 +29,7 @@ def download():
     return data, codebook
 
 
-def upload_data_to_s3(s3_bucket, s3_path_codebook='raw/codebook.txt', s3_path_data='raw/data.csv'):
+def upload_data_to_s3(s3_bucket, s3_path_codebook, s3_path_data):
     """upload data and codebook to s3 bucket without saving the files locally
 
         Args:
@@ -58,7 +58,7 @@ def upload_data_to_s3(s3_bucket, s3_path_codebook='raw/codebook.txt', s3_path_da
     logger.info(f"Codebook and data uploaded to {s3_bucket}.")
 
 
-def download_data_from_s3(s3_bucket, s3_path_codebook='raw/codebook.txt', s3_path_data='raw/data.csv'):
+def download_data_from_s3(s3_bucket, s3_path_codebook, s3_path_data):
     """read data and codebook from s3 bucket locally
 
         Args:
@@ -86,10 +86,3 @@ def download_data_from_s3(s3_bucket, s3_path_codebook='raw/codebook.txt', s3_pat
     logger.info(f"Codebook and data downloaded from {s3_bucket}.")
 
     return data, text
-
-
-if __name__ == '__main__':
-
-    data, text = download_data_from_s3('2021-msia423-qiana-yang')
-    print(data.head(5))
-    print(text)
