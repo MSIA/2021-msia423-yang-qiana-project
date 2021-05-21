@@ -73,6 +73,8 @@ python run.py create_db [-g] [<engine string>]
 ```
 If you want to use your own custom engine string instead, simply specify the `-g` optional argument. Keep in mind that the format for engine strings is `{conn_type}://{user}:{password}@{host}:{port}/{db_name}`.
 
+Caveat: if you try to create a table that already exists (i.e. having the same table name) in the database you specified, no new table would be created. In other words, the old table would remain the same as it was. To override the old table, you need to drop the table first within the mysql interface and then re-run the command above.
+
 **Run the Above Pipeline in Docker**
 
 First, clone the repository and navigate to the root directory. Run the following commands to build a Docker image:
@@ -107,7 +109,7 @@ docker run -it \
     [-g] [<engine_string>]
 ```
 Or, specify your own engine string and output path with the `SQLALCHEMY_DATABASE_URI` environment variable:
-```
+```shell script
 docker run -it \
     -e SQLALCHEMY_DATABASE_URI \
     qiana_project run.py create_db \
