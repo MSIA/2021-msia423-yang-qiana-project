@@ -39,7 +39,7 @@ We can measure the business value of the app based on user acquisition rates, ch
 
 **Data download and S3 upload instructions**
 
-We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook) to an S3 bucket without saving the files locally. The command to perform the task is as follows:
+We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook that explains different fields in the data columns) to an S3 bucket without saving the files locally. The command to perform the task is as follows:
 
 ```sh
 python run.py ingest -b <s3_bucket_name> [-c] [<codebook_path>] [-d] [<data_path>]

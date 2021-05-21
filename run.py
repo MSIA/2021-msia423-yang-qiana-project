@@ -5,10 +5,11 @@ import src.create_db as create_db
 
 if __name__ == '__main__':
 
-    # Add parsers for downloading data and ingesting data
+    # Add parsers for data ingestion pipeline
     parser = argparse.ArgumentParser(description="Create and/or add data to database")
     subparsers = parser.add_subparsers(dest='command')
 
+    # Sub-parser for downloading data and uploading to S3
     sb_upload = subparsers.add_parser("ingest", description="Upload data to s3")
     sb_upload.add_argument("-b", "--bucket", required=True, type=str, help="s3_bucket_name")
     sb_upload.add_argument("-c", "--codebook", default='raw/codebook.txt', type=str, help="codebook_filepath")
