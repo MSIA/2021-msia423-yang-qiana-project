@@ -1,10 +1,14 @@
+import numpy as np
+
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError, InternalError
 from flask_sqlalchemy import SQLAlchemy
 
 from config.flaskconfig import logging, sql_uri
+from src.modeling import OfflineModeling
 
 Base = declarative_base()
 logger = logging.getLogger('create_db')
@@ -15,26 +19,27 @@ class UserData(Base):
 
     __tablename__ = 'user_data'
 
-    user = Column(Integer, primary_key=True, nullable=False)
-    factor1 = Column(Float, unique=False, nullable=True)
-    factor2 = Column(Float, unique=False, nullable=True)
-    factor3 = Column(Float, unique=False, nullable=True)
-    factor4 = Column(Float, unique=False, nullable=True)
-    factor5 = Column(Float, unique=False, nullable=True)
-    factor6 = Column(Float, unique=False, nullable=True)
-    factor7 = Column(Float, unique=False, nullable=True)
-    factor8 = Column(Float, unique=False, nullable=True)
-    factor9 = Column(Float, unique=False, nullable=True)
-    factor10 = Column(Float, unique=False, nullable=True)
-    factor11 = Column(Float, unique=False, nullable=True)
-    factor12 = Column(Float, unique=False, nullable=True)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=False, nullable=True)
+    factor1 = Column(Float, unique=False, nullable=False)
+    factor2 = Column(Float, unique=False, nullable=False)
+    factor3 = Column(Float, unique=False, nullable=False)
+    factor4 = Column(Float, unique=False, nullable=False)
+    factor5 = Column(Float, unique=False, nullable=False)
+    factor6 = Column(Float, unique=False, nullable=False)
+    factor7 = Column(Float, unique=False, nullable=False)
+    factor8 = Column(Float, unique=False, nullable=False)
+    factor9 = Column(Float, unique=False, nullable=False)
+    factor10 = Column(Float, unique=False, nullable=False)
+    factor11 = Column(Float, unique=False, nullable=False)
+    factor12 = Column(Float, unique=False, nullable=False)
     cluster = Column(Integer, unique=False, nullable=False)
-    age = Column(Integer, unique=False, nullable=True)
-    gender = Column(Integer, unique=False, nullable=True)
+    age = Column(Float, unique=False, nullable=True)
+    gender = Column(Float, unique=False, nullable=True)
     country = Column(String(10), unique=False, nullable=True)
 
     def __repr__(self):
-        return f'<Survey user {self.user} assigned to cluster {self.cluster}.'
+        return f'<Survey user {self.name} assigned to cluster {self.cluster}>'
 
 
 def create_new_db(eng_str=sql_uri):
@@ -48,6 +53,7 @@ def create_new_db(eng_str=sql_uri):
     try:
         engine = sqlalchemy.create_engine(eng_str)
         Base.metadata.create_all(engine)
+        logger.warning('If a table with the same name already exists, it will not be updated with the new schema.')
         logger.info(f"database created at {eng_str}.")
     except sqlalchemy.exc.OperationalError:
         # Checking for correct credentials
@@ -76,26 +82,82 @@ class SurveyManager:
         """Closes session"""
         self.session.close()
 
-    def add_user_record(self, user: str, factors: dict, cluster: int, age: int, gender: int, country: str):
+    def add_user_record(self, **kwargs):
         """Add user survey record to existing database.
 
         Args:
-            user: int - user id
-            factors: dict - dict of floats corresponding to latent variables 1 to 12
-            cluster: int - cluster assignment for user
-            age: int - user age
-            gender: int - user gender
-            country: str - user country
+            kwargs: dict - dictionary with 'user_data' table columns as key and corresponding user input as values.
+                Keys consist of name, factors, cluster, age, gender, and country. See table schema above for details.
 
         Returns: None
         """
-
         session = self.session
-        user_record = UserData(user=user, **factors, cluster=cluster, age=age, gender=gender, country=country)
+        user_record = UserData(**kwargs)
         session.add(user_record)
         session.commit()
-        logger.info(f"User {user}'s record added to database.")
+        logger.info(f"New user {kwargs['name']} record added to database.")
 
-    def clear_table(self, table):
+    def clear_table(self, table_name):
         """Clear table in case things go wrong in the data ingestion process."""
-        pass
+        session = self.session
+
+        try:
+            session.query(table_name).delete()
+            session.commit()
+        except Exception:
+            session.rollback()
+
+    def upload_seed_data_to_rds(self, s3_bucket, data_path, codebook_path):
+        """upload reduced features and cluster assignment to rds
+
+        Args:
+            s3_bucket: str - s3 bucket name
+            data_path: str - data csv filepath in s3
+            codebook_path: str - codebook text filepath in s3
+
+        Returns: None
+        """
+        session = self.session
+
+        # prepare data for bulk upload
+        offline_model = OfflineModeling(s3_bucket, data_path, codebook_path)
+        pca_features, ca_labels = offline_model.initialize_models()
+        metadata = offline_model.data.iloc[:, 164:].values
+
+        # reformat data
+        records = [UserData(name=f'fake person {i}',
+                            factor1=float(pca_features[i][0]),
+                            factor2=float(pca_features[i][1]),
+                            factor3=float(pca_features[i][2]),
+                            factor4=float(pca_features[i][3]),
+                            factor5=float(pca_features[i][4]),
+                            factor6=float(pca_features[i][5]),
+                            factor7=float(pca_features[i][6]),
+                            factor8=float(pca_features[i][7]),
+                            factor9=float(pca_features[i][8]),
+                            factor10=float(pca_features[i][9]),
+                            factor11=float(pca_features[i][10]),
+                            factor12=float(pca_features[i][11]),
+                            cluster=int(ca_labels[i]),
+                            age=float(metadata[i][0]),
+                            gender=float(metadata[i][1]),
+                            country=metadata[i][3] if metadata[i][3] is not np.nan else None)
+                   for i in range(len(ca_labels))]
+
+        logging.debug(f'The first record in the database is: {records[0]}.')
+
+        try:
+            session.add_all(records)
+            session.commit()
+            logging.info('records committed to database.')
+        except AttributeError:
+            logging.error('Something went wrong. Datatype(s) of input feature(s) may be incompatible with datatypes '
+                          'in schema.')
+            session.rollback()
+        except IntegrityError:
+            logging.error('New records trespass schema restrictions. Maybe you are trying to upload a primary key '
+                          'that already exists or insert NA values in a non-nullable column.')
+        except InternalError:
+            logging.error('New record contains elements that mysql does not recognize. Maybe you have np.nan in a '
+                          'column with type str.')
+

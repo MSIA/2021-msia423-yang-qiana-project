@@ -41,10 +41,15 @@ We can measure the business value of the app based on user acquisition rates, ch
 
 We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook that explains different fields in the data columns) to an S3 bucket without saving the files locally. The command to perform the task is as follows:
 
-```sh
+```shell script
 python run.py ingest -b <s3_bucket_name> [-c] [<codebook_path>] [-d] [<data_path>]
 ```
-When running the command, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.environ.get('AWS_SECRET_ACCESS_KEY')` do not return `None`).
+When running the command, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.environ.get('AWS_SECRET_ACCESS_KEY')` do not return `None`). You can do so via the following command:
+
+```shell script
+export AWS_ACCESS_KEY_ID='<aws_access_key_id>'
+export AWS_SECRET_ACCESS_KEY='<aws_secret_access_key>'
+```
 
 Note that you must specify a valid *s3_bucket_name* for successful data upload. You may also specify custom codebook path or data path in S3. The default filepaths are `'raw/codebook.txt'` and `'raw/data.csv'` respectively. 
 
@@ -67,6 +72,8 @@ Once you have configured your environment variables, run the following command a
 python run.py create_db [-g] [<engine string>]
 ```
 If you want to use your own custom engine string instead, simply specify the `-g` optional argument. Keep in mind that the format for engine strings is `{conn_type}://{user}:{password}@{host}:{port}/{db_name}`.
+
+Caveat: if you try to create a table that already exists (i.e. having the same table name) in the database you specified, no new table would be created. In other words, the old table would remain the same as it was. To override the old table, you need to drop the table first within the mysql interface and then re-run the command above.
 
 **Run the Above Pipeline in Docker**
 
@@ -102,7 +109,7 @@ docker run -it \
     [-g] [<engine_string>]
 ```
 Or, specify your own engine string and output path with the `SQLALCHEMY_DATABASE_URI` environment variable:
-```
+```shell script
 docker run -it \
     -e SQLALCHEMY_DATABASE_URI \
     qiana_project run.py create_db \
@@ -110,7 +117,7 @@ docker run -it \
 ```
 If you are a Windows user, add `winpty` before each `docker run` statement. 
 
-
+### To Be Edited...
 ## Content
 
 <!-- toc -->
