@@ -18,18 +18,19 @@ port = os.environ.get("MYSQL_PORT")
 db_name = os.environ.get("DATABASE_NAME")
 
 # sqlalchemy database engine string; user env variable > rds engine string > local sqlite
-sql_uri = os.environ.get('SQLALCHEMY_DATABASE_URI')
-if sql_uri is None:
+SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
+if SQLALCHEMY_DATABASE_URI is None:
     if host is None:
-        sql_uri = f'sqlite:///data/data.db'
+        SQLALCHEMY_DATABASE_URI = f'sqlite:///data/data.db'
     else:
-        sql_uri = f"{conn_type}://{user}:{password}@{host}:{port}/{db_name}"
+        SQLALCHEMY_DATABASE_URI = f"{conn_type}://{user}:{password}@{host}:{port}/{db_name}"
 
-# other configurations from the template repo
 DEBUG = True
 PORT = 5000
-APP_NAME = "TBA"
+APP_NAME = "A Fun App"
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 HOST = "0.0.0.0"
 SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
 MAX_ROWS_SHOW = 100
+LOGGING_CONFIG = 'config/logging/logging.conf'
+SECRET_KEY = b'123'

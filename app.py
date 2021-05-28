@@ -2,6 +2,7 @@ import traceback
 import logging.config
 from flask import Flask
 from flask import render_template, request, redirect, url_for
+from src.create_db import UserData, SurveyManager
 
 # Initialize the Flask application
 app = Flask(__name__, template_folder="app/templates", static_folder="app/static")
@@ -16,24 +17,24 @@ logger = logging.getLogger(app.config["APP_NAME"])
 logger.debug('Web app log')
 
 # Initialize the database session
-from src.add_songs import Tracks, TrackManager
-track_manager = TrackManager(app)
+survey_manager = SurveyManager(app)
+
 
 @app.route('/')
+@app.route('/index')
 def index():
-    """Main view that lists songs in the database.
+    """Main view that lists people in the database.
 
-    Create view into index page that uses data queried from Track database and
-    inserts it into the msiapp/templates/index.html template.
+    # Create view into index page that uses data queried from Track database and
+    # inserts it into the msiapp/templates/index_old.html template.
 
     Returns: rendered html template
-
     """
 
     try:
-        tracks = track_manager.session.query(Tracks).limit(app.config["MAX_ROWS_SHOW"]).all()
+        tracks = survey_manager.session.query(UserData).limit(app.config["MAX_ROWS_SHOW"]).all()
         logger.debug("Index page accessed")
-        return render_template('index.html', tracks=tracks)
+        return render_template('index_old.html', tracks=tracks)
     except:
         traceback.print_exc()
         logger.warning("Not able to display tracks, error page returned")

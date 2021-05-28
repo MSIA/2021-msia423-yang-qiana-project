@@ -6,21 +6,23 @@ from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError, InternalError
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
-from config.flaskconfig import logging, sql_uri
+from config.flaskconfig import logging, SQLALCHEMY_DATABASE_URI
 from src.modeling import OfflineModeling
 
 Base = declarative_base()
 logger = logging.getLogger('create_db')
 
 
-class UserData(Base):
+class UserData(UserMixin, Base):
     """Create a data model for the database to be set up for user survey"""
 
     __tablename__ = 'user_data'
 
     id = Column(Integer, primary_key=True)
     name = Column(String(50), unique=False, nullable=True)
+    password = Column(String(32), unique=False, nullable=False)
     factor1 = Column(Float, unique=False, nullable=False)
     factor2 = Column(Float, unique=False, nullable=False)
     factor3 = Column(Float, unique=False, nullable=False)
@@ -42,7 +44,7 @@ class UserData(Base):
         return f'<Survey user {self.name} assigned to cluster {self.cluster}>'
 
 
-def create_new_db(eng_str=sql_uri):
+def create_new_db(eng_str=SQLALCHEMY_DATABASE_URI):
     """create database from provided engine string
 
         Args:
@@ -62,7 +64,7 @@ def create_new_db(eng_str=sql_uri):
 
 class SurveyManager:
 
-    def __init__(self, app=None, engine_string=sql_uri):
+    def __init__(self, app=None, engine_string=SQLALCHEMY_DATABASE_URI):
         """
         Args:
             app: Flask - Flask app
@@ -87,7 +89,8 @@ class SurveyManager:
 
         Args:
             kwargs: dict - dictionary with 'user_data' table columns as key and corresponding user input as values.
-                Keys consist of name, factors, cluster, age, gender, and country. See table schema above for details.
+                           Keys consist of name, password, factors, cluster, age, gender, and country.
+                           See table schema above for details.
 
         Returns: None
         """
@@ -124,8 +127,9 @@ class SurveyManager:
         pca_features, ca_labels = offline_model.initialize_models()
         metadata = offline_model.data.iloc[:, 164:].values
 
-        # reformat data
+        # reformat data - just the first 100 records for upload
         records = [UserData(name=f'fake person {i}',
+                            password='00000',
                             factor1=float(pca_features[i][0]),
                             factor2=float(pca_features[i][1]),
                             factor3=float(pca_features[i][2]),
@@ -142,7 +146,7 @@ class SurveyManager:
                             age=float(metadata[i][0]),
                             gender=float(metadata[i][1]),
                             country=metadata[i][3] if metadata[i][3] is not np.nan else None)
-                   for i in range(len(ca_labels))]
+                   for i in range(100)]
 
         logging.debug(f'The first record in the database is: {records[0]}.')
 
@@ -160,4 +164,10 @@ class SurveyManager:
         except InternalError:
             logging.error('New record contains elements that mysql does not recognize. Maybe you have np.nan in a '
                           'column with type str.')
+
+if __name__ == '__main__':
+
+    sm = SurveyManager()
+    sm.clear_table(UserData)
+
 

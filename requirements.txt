@@ -15,3 +15,8 @@ factor-analyzer==0.3.2
 scikit-learn==0.23.2
 numpy~=1.19.4
 argparse~=1.4.0
+flask-wtf~=0.15.1
+flask-login~=0.5.0
+
+WTForms~=2.3.3
+Werkzeug~=1.0.1
