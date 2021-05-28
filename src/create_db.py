@@ -10,6 +10,7 @@ from flask_login import UserMixin
 
 from config.flaskconfig import logging, SQLALCHEMY_DATABASE_URI
 from src.modeling import OfflineModeling
+from src.ingest import download_model_from_s3
 
 Base = declarative_base()
 logger = logging.getLogger('create_db')
@@ -84,21 +85,23 @@ class SurveyManager:
         """Closes session"""
         self.session.close()
 
-    def add_user_record(self, **kwargs):
+    def add_user_record(self, fa_path, ca_path, username, password, age, gender, country, survey):
         """Add user survey record to existing database.
 
         Args:
-            kwargs: dict - dictionary with 'user_data' table columns as key and corresponding user input as values.
-                           Keys consist of name, password, factors, cluster, age, gender, and country.
-                           See table schema above for details.
+            TBA
 
         Returns: None
         """
         session = self.session
-        user_record = UserData(**kwargs)
+        fa, ca = download_model_from_s3(fa_path=fa_path, ca_path=ca_path)
+        features = fa.transform(survey)
+        cluster = ca.predict(features)[0][0]
+        user_record = UserData(username, password,
+                               TBA)
         session.add(user_record)
         session.commit()
-        logger.info(f"New user {kwargs['name']} record added to database.")
+        logger.info(f"New user {username} added to database.")
 
     def clear_table(self, table_name):
         """Clear table in case things go wrong in the data ingestion process."""
@@ -110,13 +113,16 @@ class SurveyManager:
         except Exception:
             session.rollback()
 
-    def upload_seed_data_to_rds(self, s3_bucket, data_path, codebook_path):
+    def upload_seed_data_to_rds(self, s3_bucket, data_path, codebook_path,
+                                fa_path, ca_path):
         """upload reduced features and cluster assignment to rds
 
         Args:
             s3_bucket: str - s3 bucket name
             data_path: str - data csv filepath in s3
             codebook_path: str - codebook text filepath in s3
+            fa_path: str - path to save serialized factor analysis model in s3
+            ca_path: str - path to save serialized cluster analysis model in s3
 
         Returns: None
         """
@@ -125,6 +131,8 @@ class SurveyManager:
         # prepare data for bulk upload
         offline_model = OfflineModeling(s3_bucket, data_path, codebook_path)
         pca_features, ca_labels = offline_model.initialize_models()
+        offline_model.save_models(fa_path=fa_path, ca_path=ca_path)
+
         metadata = offline_model.data.iloc[:, 164:].values
 
         # reformat data - just the first 100 records for upload

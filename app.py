@@ -1,61 +1,85 @@
-import traceback
-import logging.config
-from flask import Flask
-from flask import render_template, request, redirect, url_for
+from flask import Flask, render_template, redirect, flash, url_for, request
+from flask_login import LoginManager, current_user, login_user, login_required, logout_user
+from werkzeug.urls import url_parse
+
 from src.create_db import UserData, SurveyManager
+from src.forms import RegistrationForm as RegistrationForm
+from src.forms import LoginForm as LoginForm
 
-# Initialize the Flask application
-app = Flask(__name__, template_folder="app/templates", static_folder="app/static")
 
-# Configure flask app from flask_config.py
+# default template_folder path is 'templates' in root directory; recommended to specify a custom path
+app = Flask(__name__, template_folder='app/templates')
 app.config.from_pyfile('config/flaskconfig.py')
+sm = SurveyManager(app=app)
 
-# Define LOGGING_CONFIG in flask_config.py - path to config file for setting
-# up the logger (e.g. config/logging/local.conf)
-logging.config.fileConfig(app.config["LOGGING_CONFIG"])
-logger = logging.getLogger(app.config["APP_NAME"])
-logger.debug('Web app log')
 
-# Initialize the database session
-survey_manager = SurveyManager(app)
+login = LoginManager(app)
+login.login_view = 'login'
+
+# what's with id???
+@login.user_loader
+def user_loader(id):
+    return sm.session.query(UserData).get(int(id))
 
 
 @app.route('/')
 @app.route('/index')
+@login_required
 def index():
-    """Main view that lists people in the database.
-
-    # Create view into index page that uses data queried from Track database and
-    # inserts it into the msiapp/templates/index_old.html template.
-
-    Returns: rendered html template
-    """
-
-    try:
-        tracks = survey_manager.session.query(UserData).limit(app.config["MAX_ROWS_SHOW"]).all()
-        logger.debug("Index page accessed")
-        return render_template('index_old.html', tracks=tracks)
-    except:
-        traceback.print_exc()
-        logger.warning("Not able to display tracks, error page returned")
-        return render_template('error.html')
+    user = {'username': 'Qiana'}
+    posts = [0, 0, 0]
+    return render_template('index.html', user=user, posts=posts)
 
 
-@app.route('/add', methods=['POST'])
-def add_entry():
-    """View that process a POST with new song input
-
-    :return: redirect to index page
-    """
-
-    try:
-        track_manager.add_track(artist=request.form['artist'], album=request.form['album'], title=request.form['title'])
-        logger.info("New song added: %s by %s", request.form['title'], request.form['artist'])
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
         return redirect(url_for('index'))
-    except:
-        logger.warning("Not able to display tracks, error page returned")
-        return render_template('error.html')
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = sm.session.query(UserData).filter_by(name=form.username.data,
+                                                    password=form.password.data).first()
+        if user is None:
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user)
+        next_page = request.args.get('next')
+        if not next_page or url_parse(next_page).netloc != '':
+            next_page = url_for('index')
+            return redirect(next_page)
+    return render_template('login.html', title='Sign In', form=form)
 
 
-if __name__ == '__main__':
-    app.run(debug=app.config["DEBUG"], port=app.config["PORT"], host=app.config["HOST"])
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        # organize survey data into np.array
+        # put all file paths in config
+        #survey = None
+        #data = {'fa_path': TBA,
+                #'ca_path': TBA,
+                #'name': form.username.data,
+                #'password': form.password.data,
+                #'survey': survey}
+        #sm.add_user_record(**data)
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
+
+
+
+
+
+
+
+
+

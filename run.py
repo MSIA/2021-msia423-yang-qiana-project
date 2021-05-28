@@ -21,11 +21,16 @@ if __name__ == '__main__':
 
     # Sub-parser for uploading optional seed data (100 anonymized records) to database
     sb_seed = subparsers.add_parser("upload_seed", description="Upload seed data to database")
-    sb_seed.add_argument("-a", "--app", default=None, help="flask app")
     sb_seed.add_argument("-e", "--engine_string", required=False, help="engine_string")
     sb_seed.add_argument("-b", "--bucket", required=True, type=str, help="s3_bucket_name")
     sb_seed.add_argument("-c", "--codebook", default='raw/codebook.txt', type=str, help="codebook_filepath")
     sb_seed.add_argument("-d", "--data", default='raw/data.csv', type=str, help="data_filepath")
+    sb_seed.add_argument("-f", "--factor", default='model/fa.pkl', help='factor_analysis_model_path')
+    sb_seed.add_argument("-m", "--cluster", default='model/ca.pkl', help='cluster_analysis_model_path')
+
+    # Sub-parser for clear table
+    sb_clear = subparsers.add_parser("clear_table", description="Clear all records from table")
+    sb_clear.add_argument("-e", "--engine_string", required=False, help="engine_string")
 
     args = parser.parse_args()
     sp_used = args.command
@@ -41,14 +46,18 @@ if __name__ == '__main__':
     elif sp_used == 'ingest':
         ingest.upload_data_to_s3(args.bucket, args.codebook, args.data)
     elif sp_used == 'upload_seed':
-        if args.app is None:
-            if args.engine_string is None:
-                sm = create_db.SurveyManager()
-            else:
-                sm = create_db.SurveyManager(engine_string=args.engine_string)
+        if args.engine_string is None:
+            sm = create_db.SurveyManager()
         else:
-            sm = create_db.SurveyManager(app=args.app)
-        sm.upload_seed_data_to_rds(args.bucket, args.codebook, args.data)
+            sm = create_db.SurveyManager(engine_string=args.engine_string)
+        sm.upload_seed_data_to_rds(args.bucket, args.codebook, args.data, args.factor, args.cluster)
+        sm.close()
+    elif sp_used == 'clear_table':
+        if args.engine_string is None:
+            sm = create_db.SurveyManager()
+        else:
+            sm = create_db.SurveyManager(engine_string=args.engine_string)
+        sm.clear_table(create_db.UserData)
         sm.close()
     else:
         parser.print_help()
