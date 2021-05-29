@@ -28,7 +28,7 @@
         <table>
         {% for field in form %}
             <tr>
-                {% if field.type == 'RadioField' %}
+                {% if (field.type == 'RadioField') and (field.label.field_id != 'gender') %}
                     <td>{{ field.label }}</td>
                     {% for subfield in field %}
                         <td>{{ subfield }}</td>
@@ -40,7 +40,22 @@
                 {% endif %}
             </tr>
         {% endfor %}
-        </table>
+        </table><br>
+        <p>
+            <b>Optional fields:</b><br>
+            <tr>{{ form.age.label }}: {{ form.age(size=10) }}</tr><br>
+            {% for error in form.age.errors %}
+                <tr><span style="color: red;">[{{ error }}]</span></tr>
+            {% endfor %}<br>
+            <tr>{{ form.gender.label }}:</tr>
+            {% for subfield in form.gender %}
+                <tr>{{ subfield }}</tr>
+                <tr>{{ subfield.label }}</tr>
+            {% endfor %}<br>
+            {% for error in form.gender.errors %}
+                <tr><span style="color: red;">[{{ error }}]</span></tr>
+            {% endfor %}
+        </p>
         <p>{{ form.submit() }}</p>
     </form>
 {% endblock %}

@@ -34,3 +34,9 @@ SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
 MAX_ROWS_SHOW = 100
 LOGGING_CONFIG = 'config/logging/logging.conf'
 SECRET_KEY = b'123'
+
+# file paths
+CODEBOOK_PATH = 'raw/codebook.txt'
+DATA_PATH = 'raw/data.csv'
+FA_PATH = 'model/fa.pkl'
+CA_PATH = 'model/ca.pkl'

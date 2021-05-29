@@ -1,14 +1,15 @@
 from flask import Flask, render_template, redirect, flash, url_for, request
 from flask_login import LoginManager, current_user, login_user, login_required, logout_user
 from werkzeug.urls import url_parse
+from wtforms.validators import ValidationError
 
 from src.create_db import UserData, SurveyManager
 from src.forms import Registration as Registration
 from src.forms import LoginForm as LoginForm
-from wtforms.validators import ValidationError
+from config.flaskconfig import FA_PATH, CA_PATH
 
-from pandas import pd
-
+import pandas as pd
+import re
 
 # default template_folder path is 'templates' in root directory; recommended to specify a custom path
 app = Flask(__name__, template_folder='app/templates')
@@ -31,6 +32,7 @@ class RegistrationForm(Registration):
         if len(password.data) > 32:
             raise ValidationError('Password cannot be longer than 32 characters.')
 
+
 # what's with id???
 @login.user_loader
 def user_loader(id):
@@ -41,8 +43,8 @@ def user_loader(id):
 @app.route('/index')
 @login_required
 def index():
-    user = {'username': 'Qiana'}
-    return render_template('index.html', user=user)
+    match = sm.session.query(UserData).filter_by(cluster=current_user.cluster)
+    return render_template('index.html')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -51,7 +53,8 @@ def login():
         return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        user = sm.session.query(UserData).filter_by(name=form.username.data,
+        username = form.username.data
+        user = sm.session.query(UserData).filter_by(name=username,
                                                     password=form.password.data).first()
         if user is None:
             flash('Invalid username or password')
@@ -60,14 +63,14 @@ def login():
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('index')
-            return redirect(next_page)
+        return redirect(next_page)
     return render_template('login.html', title='Sign In', form=form)
 
 
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -77,21 +80,20 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         # organize survey data into np.array
-        # put all file paths in config
-        raw_data = {key: values for key, values in form.__dict__.items() if key.startswith(r'[A-Z]')}
-        raw_df = pd.DataFrame(raw_data, orient='columns')
-        # NEED TO CHANGE!!!
-        sm.add_user_record(fa_path=None, ca_path=None, username=form.username.data,
-                           password=form.password.data, survey=raw_df, age=None, gender=None, country=None)
+        raw_data = {field.label.field_id: [field.data] for field in form if re.match('^[A-Z]', field.label.field_id)}
+        raw_data = {key: value if value != [None] else [0] for key, value in raw_data.items()}
+        app.logger.debug(f'{raw_data}')
+        raw_df = pd.DataFrame.from_dict(raw_data, orient='columns')
+        app.logger.debug(f'Raw_df created from user input: {raw_df}')
+        # add new user record to rds
+        '''
+        sm.add_user_record(fa_path=FA_PATH, ca_path=CA_PATH,
+                           username=form.username.data,
+                           password=form.password.data,
+                           survey=raw_df,
+                           age=form.age.data,
+                           gender=form.gender.data)
+        '''
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
-
-
-
-
-
-
-
-
-

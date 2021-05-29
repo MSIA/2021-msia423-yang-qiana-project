@@ -39,7 +39,6 @@ class UserData(UserMixin, Base):
     cluster = Column(Integer, unique=False, nullable=False)
     age = Column(Float, unique=False, nullable=True)
     gender = Column(Float, unique=False, nullable=True)
-    country = Column(String(10), unique=False, nullable=True)
 
     def __repr__(self):
         return f'<Survey user {self.name} assigned to cluster {self.cluster}>'
@@ -85,23 +84,46 @@ class SurveyManager:
         """Closes session"""
         self.session.close()
 
-    def add_user_record(self, fa_path, ca_path, username, password, age, gender, country, survey):
+    def add_user_record(self, fa_path, ca_path, username, password, age, gender, survey):
         """Add user survey record to existing database.
 
         Args:
-            TBA
+            fa_path: str - path to factor analysis model in s3
+            ca_path: str - path to cluster analysis model in s3
+            username: str - username
+            password: str - password
+            age: int - age
+            gender: int - gender, one-hot encoded
+            survey: :obj: pandas dataframe - user survey results as a dataframe with header
 
         Returns: None
         """
         session = self.session
         fa, ca = download_model_from_s3(fa_path=fa_path, ca_path=ca_path)
-        features = fa.transform(survey)
-        cluster = ca.predict(features)[0][0]
-        user_record = UserData(username, password,
-                               TBA)
-        session.add(user_record)
-        session.commit()
-        logger.info(f"New user {username} added to database.")
+        pca_features = fa.transform(survey)
+        cluster = ca.predict(pca_features)[0]
+        user_record = UserData(name=username, password=password,
+                               age=float(age), gender=float(gender),
+                               factor1=float(pca_features[0][0]),
+                               factor2=float(pca_features[0][1]),
+                               factor3=float(pca_features[0][2]),
+                               factor4=float(pca_features[0][3]),
+                               factor5=float(pca_features[0][4]),
+                               factor6=float(pca_features[0][5]),
+                               factor7=float(pca_features[0][6]),
+                               factor8=float(pca_features[0][7]),
+                               factor9=float(pca_features[0][8]),
+                               factor10=float(pca_features[0][9]),
+                               factor11=float(pca_features[0][10]),
+                               factor12=float(pca_features[0][11]),
+                               cluster=int(cluster))
+        try:
+            session.add(user_record)
+            session.commit()
+            logger.info(f"New user {username} added to database.")
+        except Exception:
+            session.rollback()
+            logger.error(f"Failed to add {username} to database.")
 
     def clear_table(self, table_name):
         """Clear table in case things go wrong in the data ingestion process."""
@@ -115,7 +137,7 @@ class SurveyManager:
 
     def upload_seed_data_to_rds(self, s3_bucket, data_path, codebook_path,
                                 fa_path, ca_path):
-        """upload reduced features and cluster assignment to rds
+        """upload reduced features and cluster assignment to rds and save models to s3
 
         Args:
             s3_bucket: str - s3 bucket name
@@ -136,7 +158,7 @@ class SurveyManager:
         metadata = offline_model.data.iloc[:, 164:].values
 
         # reformat data - just the first 100 records for upload
-        records = [UserData(name=f'fake person {i}',
+        records = [UserData(name=f'Fake Brian Rice {i}',
                             password='00000',
                             factor1=float(pca_features[i][0]),
                             factor2=float(pca_features[i][1]),
@@ -152,8 +174,7 @@ class SurveyManager:
                             factor12=float(pca_features[i][11]),
                             cluster=int(ca_labels[i]),
                             age=float(metadata[i][0]),
-                            gender=float(metadata[i][1]),
-                            country=metadata[i][3] if metadata[i][3] is not np.nan else None)
+                            gender=float(metadata[i][1]))
                    for i in range(100)]
 
         logging.debug(f'The first record in the database is: {records[0]}.')
@@ -172,10 +193,5 @@ class SurveyManager:
         except InternalError:
             logging.error('New record contains elements that mysql does not recognize. Maybe you have np.nan in a '
                           'column with type str.')
-
-if __name__ == '__main__':
-
-    sm = SurveyManager()
-    sm.clear_table(UserData)
 
 
