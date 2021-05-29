@@ -15,34 +15,32 @@
             {{ form.password.label }}<br>
             {{ form.password(size=32) }}<br>
             {% for error in form.password.errors %}
-            <span style="color: red;">[{{ error }}]</span>
+                <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
         <p>
             {{ form.password2.label }}<br>
             {{ form.password2(size=32) }}<br>
             {% for error in form.password2.errors %}
-            <span style="color: red;">[{{ error }}]</span>
+                <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
-        <p>
-            <tr><td align="right">I take time out for others.</td></tr>
-            {% for subfield in form.question0 %}
-                <tr>
-                    <td>{{ subfield }}</td>
-                    <td>{{ subfield.label }}</td>
-                </tr>
-            {% endfor %}
-        </p>
-        <p>
-            <tr><td align="right">{{ form.A7.label }}</td></tr>
-            {% for subfield in form.question1 %}
-                <tr>
-                    <td>{{ subfield }}</td>
-                    <td>{{ subfield.label }}</td>
-                </tr>
-            {% endfor %}
-        </p>
+        <table>
+        {% for field in form %}
+            <tr>
+                {% if field.type == 'RadioField' %}
+                    <td>{{ field.label }}</td>
+                    {% for subfield in field %}
+                        <td>{{ subfield }}</td>
+                        <td>{{ subfield.label }}</td>
+                    {% endfor %}
+                    {% for error in field.errors %}
+                        <td><span style="color: red;">[{{ error }}]</span></td>
+                    {% endfor %}
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </table>
         <p>{{ form.submit() }}</p>
     </form>
 {% endblock %}

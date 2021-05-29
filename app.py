@@ -3,18 +3,33 @@ from flask_login import LoginManager, current_user, login_user, login_required, 
 from werkzeug.urls import url_parse
 
 from src.create_db import UserData, SurveyManager
-from src.forms import RegistrationForm as RegistrationForm
+from src.forms import Registration as Registration
 from src.forms import LoginForm as LoginForm
+from wtforms.validators import ValidationError
+
+from pandas import pd
 
 
 # default template_folder path is 'templates' in root directory; recommended to specify a custom path
 app = Flask(__name__, template_folder='app/templates')
 app.config.from_pyfile('config/flaskconfig.py')
 sm = SurveyManager(app=app)
-
-
 login = LoginManager(app)
 login.login_view = 'login'
+
+
+class RegistrationForm(Registration):
+
+    def validate_username(self, username):
+        user = sm.session.query(UserData).filter_by(name=username.data).first()
+        if user is not None:
+            raise ValidationError('Please use a different username.')
+        if len(username.data) > 50:
+            raise ValidationError('Username cannot be longer than 50 characters.')
+
+    def validate_password(self, password):
+        if len(password.data) > 32:
+            raise ValidationError('Password cannot be longer than 32 characters.')
 
 # what's with id???
 @login.user_loader
@@ -27,8 +42,7 @@ def user_loader(id):
 @login_required
 def index():
     user = {'username': 'Qiana'}
-    posts = [0, 0, 0]
-    return render_template('index.html', user=user, posts=posts)
+    return render_template('index.html', user=user)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -64,13 +78,11 @@ def register():
     if form.validate_on_submit():
         # organize survey data into np.array
         # put all file paths in config
-        #survey = None
-        #data = {'fa_path': TBA,
-                #'ca_path': TBA,
-                #'name': form.username.data,
-                #'password': form.password.data,
-                #'survey': survey}
-        #sm.add_user_record(**data)
+        raw_data = {key: values for key, values in form.__dict__.items() if key.startswith(r'[A-Z]')}
+        raw_df = pd.DataFrame(raw_data, orient='columns')
+        # NEED TO CHANGE!!!
+        sm.add_user_record(fa_path=None, ca_path=None, username=form.username.data,
+                           password=form.password.data, survey=raw_df, age=None, gender=None, country=None)
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)
