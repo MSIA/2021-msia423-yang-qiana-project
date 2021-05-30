@@ -2,5 +2,8 @@
 
 {% block content %}
     <h1>Hi, {{ current_user.name }}!</h1>
+    {% if file_url %}
+        <img src="{{ file_url }}">
+    {% endif %}
 {% endblock %}
 

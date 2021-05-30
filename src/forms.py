@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, RadioField, IntegerField
+from flask_wtf.file import FileAllowed, FileRequired
+from wtforms import StringField, PasswordField, SubmitField, RadioField, IntegerField, FileField
 from wtforms.validators import DataRequired, EqualTo, Optional
-
 
 class Registration(FlaskForm):
 
@@ -12,6 +12,7 @@ class Registration(FlaskForm):
     age = IntegerField(label='Age', default=0, validators=[Optional()])
     gender = RadioField(label='Gender', choices=[(1, 'Male'), (2, 'Female'), (3, 'Other')], coerce=int,
                         validators=[Optional()])
+    photo = FileField('Photo', validators=[FileRequired(), FileAllowed(['jpg', 'png'], 'Images only!')])
 
     args = {'choices': [(1, 'strongly disagree'), (2, 'disagree'), (3, 'neither disagree nor agree'),
                         (4, 'agree'), (5, 'strongly agree')],

@@ -44,6 +44,7 @@ def user_loader(id):
 @login_required
 def index():
     match = sm.session.query(UserData).filter_by(cluster=current_user.cluster)
+    file_url = None
     return render_template('index.html')
 
 
@@ -79,10 +80,12 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
+        # upload picture
+        file = form.photo.data
+        app.logger.debug(f'{file}')
         # organize survey data into np.array
         raw_data = {field.label.field_id: [field.data] for field in form if re.match('^[A-Z]', field.label.field_id)}
         raw_data = {key: value if value != [None] else [0] for key, value in raw_data.items()}
-        app.logger.debug(f'{raw_data}')
         raw_df = pd.DataFrame.from_dict(raw_data, orient='columns')
         app.logger.debug(f'Raw_df created from user input: {raw_df}')
         # add new user record to rds

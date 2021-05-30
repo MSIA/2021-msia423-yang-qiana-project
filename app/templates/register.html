@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1>Register</h1>
-    <form action="" method="post">
+    <form action="" method="post" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
         <p>
             {{ form.username.label }}<br>
@@ -42,7 +42,7 @@
         {% endfor %}
         </table><br>
         <p>
-            <b>Optional fields:</b><br>
+            <b>Optional fields:</b><br><br>
             <tr>{{ form.age.label }}: {{ form.age(size=10) }}</tr><br>
             {% for error in form.age.errors %}
                 <tr><span style="color: red;">[{{ error }}]</span></tr>
@@ -54,6 +54,11 @@
             {% endfor %}<br>
             {% for error in form.gender.errors %}
                 <tr><span style="color: red;">[{{ error }}]</span></tr>
+            {% endfor %}<br><br>
+            Upload profile picture:<br>
+            {{ form.photo }}
+            {% for error in form.photo.errors %}
+                <span style="color: red;">{{ error }}</span>
             {% endfor %}
         </p>
         <p>{{ form.submit() }}</p>

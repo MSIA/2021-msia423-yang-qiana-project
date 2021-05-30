@@ -34,6 +34,8 @@ SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
 MAX_ROWS_SHOW = 100
 LOGGING_CONFIG = 'config/logging/logging.conf'
 SECRET_KEY = b'123'
+MAX_CONTENT_LENGTH = 1024 * 1024 # limit file size to 1MB
+UPLOAD_EXTENSIONS = ['.jpg', '.png', '.gif']
 
 # file paths
 CODEBOOK_PATH = 'raw/codebook.txt'
