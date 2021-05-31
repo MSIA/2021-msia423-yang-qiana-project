@@ -6,7 +6,7 @@ __pycache__/
 .DS_Store
 .idea/
 .ipynb_checkpoints/
-.mysqlconfig
+.projectconfig
 .awsconfig
 .ecsconfig
 
@@ -16,3 +16,4 @@ copilot/*
 !data/external/
 config/local
 !.gitkeep
+test/*.csv

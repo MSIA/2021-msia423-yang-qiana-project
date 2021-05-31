@@ -78,6 +78,7 @@ class SurveyManager:
             self.session = Session()
         else:
             raise ValueError("Need either an engine string or a Flask app to initialize")
+        logger.debug('Session successfully created.')
 
     def close(self):
         """Closes session"""
@@ -135,12 +136,8 @@ class SurveyManager:
     def clear_table(self):
         """Clear table in case things go wrong in the data ingestion process."""
         session = self.session
-
-        try:
-            session.query(UserData).delete()
-            session.commit()
-        except Exception:
-            session.rollback()
+        session.query(UserData).delete()
+        session.commit()
 
     def drop_table(self):
         """drop user_data table from database."""
