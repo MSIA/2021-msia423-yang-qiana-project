@@ -45,10 +45,34 @@ def user_loader(id):
 @app.route('/index')
 @login_required
 def index():
-    # NEED TO CHANGE
-    norm = current_user.factor1 + current_user.factor2 * current_user.factor3
-    match = text(f'SELECT (factor1 * {current_user.factor1} + factor2 * {current_user.factor2} + factor3 * '
-                 f'{current_user.factor3}) / (SQRT(factor1 * factor1 + factor2 * factor2 + factor3 * factor3) '
+    norm = current_user.factor1 ** 2 + \
+           current_user.factor2 ** 2 + \
+           current_user.factor3 ** 2 + \
+           current_user.factor4 ** 2 + \
+           current_user.factor5 ** 2 + \
+           current_user.factor6 ** 2 + \
+           current_user.factor7 ** 2 + \
+           current_user.factor8 ** 2 + \
+           current_user.factor9 ** 2 + \
+           current_user.factor10 ** 2 + \
+           current_user.factor11 ** 2 + \
+           current_user.factor12 ** 2
+    match = text(f'SELECT (factor1 * {current_user.factor1} + '
+                 f'factor2 * {current_user.factor2} + '
+                 f'factor3 * {current_user.factor3} + '
+                 f'factor4 * {current_user.factor4} + '
+                 f'factor5 * {current_user.factor5} + '
+                 f'factor6 * {current_user.factor6} + '
+                 f'factor7 * {current_user.factor7} + '
+                 f'factor8 * {current_user.factor8} + '
+                 f'factor9 * {current_user.factor9} + '
+                 f'factor10 * {current_user.factor10} + '
+                 f'factor11 * {current_user.factor11} + '
+                 f'factor12 * {current_user.factor12}) /'
+                 f'(SQRT(factor1 * factor1 + factor2 * factor2 + factor3 * factor3 + '
+                 f'factor4 * factor4 + factor5 * factor5 + factor6 * factor6 + '
+                 f'factor7 * factor7 + factor8 * factor8 + factor9 * factor9 + '
+                 f'factor10 * factor10 + factor11 * factor11 + factor12 * factor12)'
                  f' * SQRT({norm})) AS cosine, name, age, image, '
                  f'CASE WHEN gender = 1 THEN "Male" WHEN gender = 2 THEN "Female" WHEN gender = 3 THEN "Non-binary" '
                  f'ELSE NULL END AS sex '
