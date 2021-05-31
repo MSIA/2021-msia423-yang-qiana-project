@@ -3,6 +3,7 @@ from sklearn.cluster import KMeans
 
 from src.ingest import download_data_from_s3, upload_model_to_s3
 from config.flaskconfig import logging
+import yaml
 
 
 class OfflineModeling:

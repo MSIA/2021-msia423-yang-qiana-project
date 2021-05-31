@@ -2,7 +2,7 @@ import argparse
 
 import src.ingest as ingest
 import src.create_db as create_db
-from config.flaskconfig import CODEBOOK_PATH, DATA_PATH, FA_PATH, CA_PATH
+from config.flaskconfig import CODEBOOK_PATH, DATA_PATH, FA_PATH, CA_PATH, s3_bucket
 
 if __name__ == '__main__':
 
@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     # Sub-parser for downloading data and uploading to S3
     sb_upload = subparsers.add_parser("ingest", description="Upload data to s3")
-    sb_upload.add_argument("-b", "--bucket", required=True, type=str, help="s3_bucket_name")
+    sb_upload.add_argument("-b", "--bucket", default=s3_bucket, help="s3_bucket_name")
     sb_upload.add_argument("-c", "--codebook", default=CODEBOOK_PATH, type=str, help="codebook_filepath")
     sb_upload.add_argument("-d", "--data", default=DATA_PATH, type=str, help="data_filepath")
 
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # Sub-parser for uploading optional seed data (100 anonymized records) to database
     sb_seed = subparsers.add_parser("upload_seed", description="Upload seed data to database")
     sb_seed.add_argument("-e", "--engine_string", required=False, help="engine_string")
-    sb_seed.add_argument("-b", "--bucket", required=True, type=str, help="s3_bucket_name")
+    sb_seed.add_argument("-b", "--bucket", default=s3_bucket, help="s3_bucket_name")
     sb_seed.add_argument("-c", "--codebook", default=CODEBOOK_PATH, type=str, help="codebook_filepath")
     sb_seed.add_argument("-d", "--data", default=DATA_PATH, type=str, help="data_filepath")
     sb_seed.add_argument("-f", "--factor", default=FA_PATH, help='factor_analysis_model_path')
