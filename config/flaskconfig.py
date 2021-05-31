@@ -9,6 +9,9 @@ logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
 # data source
 data_source = 'http://openpsychometrics.org/_rawdata/16PF.zip'
 
+# s3 credentials
+s3_bucket = os.environ.get("S3_BUCKET")
+
 # mysql rds credentials
 conn_type = "mysql+pymysql"
 user = os.environ.get("MYSQL_USER")
@@ -34,7 +37,7 @@ SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
 MAX_ROWS_SHOW = 100
 LOGGING_CONFIG = 'config/logging/logging.conf'
 SECRET_KEY = b'123'
-MAX_CONTENT_LENGTH = 1024 * 1024 # limit file size to 1MB
+MAX_CONTENT_LENGTH = 20500  # limit file size to 20KB
 UPLOAD_EXTENSIONS = ['.jpg', '.png', '.gif']
 
 # file paths

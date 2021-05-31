@@ -1,13 +1,10 @@
-@import url(https://fonts.googleapis.com/css?family=Open+Sans:300,400,600);
-@import url(http://weloveiconfonts.com/api/?family=fontawesome);
-
-[class*="fontawesome-"]:before {
-  font-family: 'FontAwesome', sans-serif;
-}
-
 body {
-  height: 100%;
-  -webkit-font-smoothing: antialiased;
-  font-family: 'Open Sans', sans-serif;
-  background-color:#cdced8;
+    font-family: 'Verdana';
+    font-weight: 300;
+    font-size: 16px;
+    color: #555;
+    -webkit-font-smoothing: antialiased;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+    background-color: #FFE4C4;
 }

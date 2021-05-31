@@ -16,7 +16,7 @@ class OfflineModeling:
         Returns: None
         """
         self.s3 = s3_bucket_name
-        self.data = download_data_from_s3(self.s3, codebook_path, data_path)[0]
+        self.data = download_data_from_s3(self.s3, s3_path_codebook=codebook_path, s3_path_data=data_path)[0]
         self.fa = FactorAnalyzer(n_factors=12, rotation='promax')
         self.ca = KMeans(n_clusters=10, random_state=42)
 

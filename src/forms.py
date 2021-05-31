@@ -12,7 +12,7 @@ class Registration(FlaskForm):
     age = IntegerField(label='Age', default=0, validators=[Optional()])
     gender = RadioField(label='Gender', choices=[(1, 'Male'), (2, 'Female'), (3, 'Other')], coerce=int,
                         validators=[Optional()])
-    photo = FileField('Photo', validators=[FileRequired(), FileAllowed(['jpg', 'png'], 'Images only!')])
+    photo = FileField('Photo', validators=[FileAllowed(['jpg', 'png'], 'Images only!')])
 
     args = {'choices': [(1, 'strongly disagree'), (2, 'disagree'), (3, 'neither disagree nor agree'),
                         (4, 'agree'), (5, 'strongly agree')],
@@ -50,7 +50,7 @@ class Registration(FlaskForm):
     J7 = RadioField(label='I do unexpected things.', **args)
     P2 = RadioField(label='I get angry easily.', **args)
     G9 = RadioField(label='I am quiet around strangers.', **args)
-    N7 = RadioField(label="I don't mind eating alone.", **args)
+    N5 = RadioField(label="I don't mind eating alone.", **args)
     A6 = RadioField(label='I make people feel at ease.', **args)
     B4 = RadioField(label='I use my brain.', **args)
     P10 = RadioField(label='I have a good word for everyone.',  **args)

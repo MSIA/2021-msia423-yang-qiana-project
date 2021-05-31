@@ -132,9 +132,8 @@ def download_model_from_s3(s3_bucket, fa_path, ca_path):
         # Checking for valid AWS credentials
         logger.error("Please provide valid AWS credentials")
 
-    fa_pickle_obj = s3.get_object(Bucket=s3_bucket, key=fa_path)
-    ca_pickle_obj = s3.get_object(Bucket=s3_bucket, key=ca_path)
-
+    fa_pickle_obj = s3.get_object(Bucket=s3_bucket, Key=fa_path)['Body'].read()
+    ca_pickle_obj = s3.get_object(Bucket=s3_bucket, Key=ca_path)['Body'].read()
     logger.info(f"Fitted models downloaded from {s3_bucket}.")
 
     fa = pickle.loads(fa_pickle_obj)

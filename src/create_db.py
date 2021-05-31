@@ -1,5 +1,3 @@
-import numpy as np
-
 import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
@@ -22,7 +20,7 @@ class UserData(UserMixin, Base):
     __tablename__ = 'user_data'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=False, nullable=True)
+    name = Column(String(50), unique=False, nullable=False)
     password = Column(String(32), unique=False, nullable=False)
     factor1 = Column(Float, unique=False, nullable=False)
     factor2 = Column(Float, unique=False, nullable=False)
@@ -39,6 +37,7 @@ class UserData(UserMixin, Base):
     cluster = Column(Integer, unique=False, nullable=False)
     age = Column(Float, unique=False, nullable=True)
     gender = Column(Float, unique=False, nullable=True)
+    image = Column(String(28500), unique=False, nullable=True)
 
     def __repr__(self):
         return f'<Survey user {self.name} assigned to cluster {self.cluster}>'
@@ -74,8 +73,8 @@ class SurveyManager:
             self.db = SQLAlchemy(app)
             self.session = self.db.session
         elif engine_string:
-            engine = sqlalchemy.create_engine(engine_string)
-            Session = sessionmaker(bind=engine)
+            self.engine = sqlalchemy.create_engine(engine_string)
+            Session = sessionmaker(bind=self.engine)
             self.session = Session()
         else:
             raise ValueError("Need either an engine string or a Flask app to initialize")
@@ -84,26 +83,29 @@ class SurveyManager:
         """Closes session"""
         self.session.close()
 
-    def add_user_record(self, fa_path, ca_path, username, password, age, gender, survey):
+    def add_user_record(self, bucket, fa_path, ca_path, username, password, age, gender, survey, image):
         """Add user survey record to existing database.
 
         Args:
+            bucket: str - s3 bucket
             fa_path: str - path to factor analysis model in s3
             ca_path: str - path to cluster analysis model in s3
             username: str - username
             password: str - password
-            age: int - age
-            gender: int - gender, one-hot encoded
+            age: float - age
+            gender: float - gender, one-hot encoded
             survey: :obj: pandas dataframe - user survey results as a dataframe with header
+            image: str - encoded image
 
         Returns: None
         """
         session = self.session
-        fa, ca = download_model_from_s3(fa_path=fa_path, ca_path=ca_path)
+        fa, ca = download_model_from_s3(s3_bucket=bucket, fa_path=fa_path, ca_path=ca_path)
         pca_features = fa.transform(survey)
         cluster = ca.predict(pca_features)[0]
         user_record = UserData(name=username, password=password,
-                               age=float(age), gender=float(gender),
+                               age=float(age) if age else None,
+                               gender=float(gender) if gender else None,
                                factor1=float(pca_features[0][0]),
                                factor2=float(pca_features[0][1]),
                                factor3=float(pca_features[0][2]),
@@ -116,7 +118,11 @@ class SurveyManager:
                                factor10=float(pca_features[0][9]),
                                factor11=float(pca_features[0][10]),
                                factor12=float(pca_features[0][11]),
-                               cluster=int(cluster))
+                               cluster=int(cluster),
+                               image=image)
+        session.add(user_record)
+        session.commit()
+        '''
         try:
             session.add(user_record)
             session.commit()
@@ -124,16 +130,21 @@ class SurveyManager:
         except Exception:
             session.rollback()
             logger.error(f"Failed to add {username} to database.")
+        '''
 
-    def clear_table(self, table_name):
+    def clear_table(self):
         """Clear table in case things go wrong in the data ingestion process."""
         session = self.session
 
         try:
-            session.query(table_name).delete()
+            session.query(UserData).delete()
             session.commit()
         except Exception:
             session.rollback()
+
+    def drop_table(self):
+        """drop user_data table from database."""
+        UserData.__table__.drop(self.engine)
 
     def upload_seed_data_to_rds(self, s3_bucket, data_path, codebook_path,
                                 fa_path, ca_path):
@@ -151,7 +162,7 @@ class SurveyManager:
         session = self.session
 
         # prepare data for bulk upload
-        offline_model = OfflineModeling(s3_bucket, data_path, codebook_path)
+        offline_model = OfflineModeling(s3_bucket, data_path=data_path, codebook_path=codebook_path)
         pca_features, ca_labels = offline_model.initialize_models()
         offline_model.save_models(fa_path=fa_path, ca_path=ca_path)
 

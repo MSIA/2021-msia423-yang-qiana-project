@@ -55,7 +55,7 @@
             {% for error in form.gender.errors %}
                 <tr><span style="color: red;">[{{ error }}]</span></tr>
             {% endfor %}<br><br>
-            Upload profile picture:<br>
+            <b>Upload profile picture: (limit 20KB)</b><br><br>
             {{ form.photo }}
             {% for error in form.photo.errors %}
                 <span style="color: red;">{{ error }}</span>

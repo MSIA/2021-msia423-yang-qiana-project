@@ -6,13 +6,16 @@ from wtforms.validators import ValidationError
 from src.create_db import UserData, SurveyManager
 from src.forms import Registration as Registration
 from src.forms import LoginForm as LoginForm
-from config.flaskconfig import FA_PATH, CA_PATH
+from config.flaskconfig import FA_PATH, CA_PATH, s3_bucket, MAX_ROWS_SHOW
 
 import pandas as pd
 import re
 
-# default template_folder path is 'templates' in root directory; recommended to specify a custom path
-app = Flask(__name__, template_folder='app/templates')
+from sqlalchemy.sql import text
+from base64 import b64encode
+
+# default template_folder path is 'templates' in root directory if no template folder is specified
+app = Flask(__name__, template_folder='app/templates', static_folder="app/static")
 app.config.from_pyfile('config/flaskconfig.py')
 sm = SurveyManager(app=app)
 login = LoginManager(app)
@@ -33,7 +36,6 @@ class RegistrationForm(Registration):
             raise ValidationError('Password cannot be longer than 32 characters.')
 
 
-# what's with id???
 @login.user_loader
 def user_loader(id):
     return sm.session.query(UserData).get(int(id))
@@ -43,9 +45,20 @@ def user_loader(id):
 @app.route('/index')
 @login_required
 def index():
-    match = sm.session.query(UserData).filter_by(cluster=current_user.cluster)
-    file_url = None
-    return render_template('index.html')
+    # NEED TO CHANGE
+    norm = current_user.factor1 + current_user.factor2 * current_user.factor3
+    match = text(f'SELECT (factor1 * {current_user.factor1} + factor2 * {current_user.factor2} + factor3 * '
+                 f'{current_user.factor3}) / (SQRT(factor1 * factor1 + factor2 * factor2 + factor3 * factor3) '
+                 f' * SQRT({norm})) AS cosine, name, age, image, '
+                 f'CASE WHEN gender = 1 THEN "Male" WHEN gender = 2 THEN "Female" WHEN gender = 3 THEN "Non-binary" '
+                 f'ELSE NULL END AS sex '
+                 f'FROM user_data '
+                 f'WHERE cluster = {current_user.cluster} AND id <> {current_user.id} '
+                 f'ORDER BY cosine DESC '
+                 f'LIMIT {MAX_ROWS_SHOW};')
+    top_10 = sm.session.execute(match)
+    photo = current_user.image
+    return render_template('index.html', filestring=photo, top_10=top_10, title='Homepage')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -79,24 +92,28 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = RegistrationForm()
+    file_string = None
     if form.validate_on_submit():
         # upload picture
         file = form.photo.data
-        app.logger.debug(f'{file}')
+        if file:
+            file_string = b64encode(file.read()).decode('utf-8')
+            app.logger.debug(f'file type: {type(file_string)}, file length: {len(file_string)}')
         # organize survey data into np.array
         raw_data = {field.label.field_id: [field.data] for field in form if re.match('^[A-Z]', field.label.field_id)}
         raw_data = {key: value if value != [None] else [0] for key, value in raw_data.items()}
         raw_df = pd.DataFrame.from_dict(raw_data, orient='columns')
         app.logger.debug(f'Raw_df created from user input: {raw_df}')
-        # add new user record to rds
-        '''
-        sm.add_user_record(fa_path=FA_PATH, ca_path=CA_PATH,
+        # add new user record
+        sm.add_user_record(bucket=s3_bucket,
+                           fa_path=FA_PATH,
+                           ca_path=CA_PATH,
                            username=form.username.data,
                            password=form.password.data,
                            survey=raw_df,
                            age=form.age.data,
-                           gender=form.gender.data)
-        '''
+                           gender=form.gender.data,
+                           image=file_string)
         flash('Congratulations, you are now a registered user!')
         return redirect(url_for('login'))
     return render_template('register.html', title='Register', form=form)

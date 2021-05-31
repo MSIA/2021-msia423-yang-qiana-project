@@ -2,8 +2,27 @@
 
 {% block content %}
     <h1>Hi, {{ current_user.name }}!</h1>
-    {% if file_url %}
-        <img src="{{ file_url }}">
-    {% endif %}
+    {% if filestring %}
+        <b>Your profile:</b><br>
+        {% if current_user.age %}
+            <tr><b>Age:</b> {{ user.age }}</tr><br>
+        {% endif %}
+        {% if current_user.image %}
+            <img src="data:image/jpg;base64, {{ filestring }}" alt="alternate" /><br>
+        {% endif %}
+    {% endif %}<br><br>
+    <h3>Matches:</h3>
+    {% for user in top_10 %}
+        <tr><b>Username: </b>{{ user.name }}</tr><br>
+        {% if user.age %}
+            <tr><b>Age: </b>{{ user.age }}</tr><br>
+        {% endif %}
+        {% if user.sex %}
+            <tr><b>Gender: </b>{{ user.sex }}</tr><br>
+        {% endif %}
+        {% if user.image %}
+            <tr><img src="data:image/jpg;base64, {{ user.image }}" alt="alternate" /></tr><br>
+        {% endif %}<br><br>
+    {% endfor %}
 {% endblock %}
 
