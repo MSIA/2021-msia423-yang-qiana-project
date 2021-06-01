@@ -1,9 +1,6 @@
 image:
 	docker build -t qiana_project .
 
-image_app:
-	docker build -f app/Dockerfile_python -t qiana_project .
-
 mysql_init:
 	docker pull mysql:5.7.33
 

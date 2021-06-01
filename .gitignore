@@ -7,7 +7,6 @@ __pycache__/
 .idea/
 .ipynb_checkpoints/
 .projectconfig
-
 data/*
 copilot/*
 !data/sample/
@@ -15,3 +14,4 @@ copilot/*
 config/local
 !.gitkeep
 test/*.csv
+Dockerfile_ec2
