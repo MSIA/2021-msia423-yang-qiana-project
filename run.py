@@ -1,6 +1,6 @@
 import argparse
 
-import src.ingest as ingest
+from src.ingest import Ingest
 import src.create_db as create_db
 from config.flaskconfig import CODEBOOK_PATH, DATA_PATH, FA_PATH, CA_PATH, s3_bucket
 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         else:
             create_db.create_new_db(args.eng_str)
     elif sp_used == 'ingest':
-        ingest.upload_data_to_s3(args.bucket, args.codebook, args.data)
+        Ingest().upload_data_to_s3(args.bucket, args.codebook, args.data)
     elif sp_used == 'upload_seed':
         if args.engine_string is None:
             sm = create_db.SurveyManager()

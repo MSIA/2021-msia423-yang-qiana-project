@@ -5,7 +5,7 @@ import pandas as pd
 from factor_analyzer.factor_analyzer import FactorAnalyzer
 from sklearn.cluster import KMeans
 
-from src.ingest import download_data_from_s3
+from src.ingest import Ingest
 from config.flaskconfig import s3_bucket, CODEBOOK_PATH, DATA_PATH, logging
 
 logger = logging.getLogger(__name__)
@@ -40,9 +40,9 @@ if __name__ == '__main__':
     sp_used = args.command
 
     if sp_used == 'download_data':
-        data, codebook = download_data_from_s3(s3_bucket=args.bucket,
-                                               s3_path_data=args.data,
-                                               s3_path_codebook=args.codebook)
+        data, codebook = Ingest().download_data_from_s3(s3_bucket=args.bucket,
+                                                        s3_path_data=args.data,
+                                                        s3_path_codebook=args.codebook)
         output = data
 
     elif sp_used == 'generate_features':
@@ -65,3 +65,4 @@ if __name__ == '__main__':
 
     if args.output:
         output.to_csv(args.output, index=False)
+        logger.info(f'Output saved to {args.output}.')

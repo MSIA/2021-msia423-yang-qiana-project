@@ -8,7 +8,7 @@ from flask_login import UserMixin
 
 from config.flaskconfig import logging, SQLALCHEMY_DATABASE_URI
 from src.modeling import OfflineModeling
-from src.ingest import download_model_from_s3
+from src.ingest import Ingest
 
 Base = declarative_base()
 logger = logging.getLogger('create_db')
@@ -61,7 +61,7 @@ def create_new_db(eng_str=SQLALCHEMY_DATABASE_URI):
         logger.error(f"create_db: Access to {eng_str} denied! Please enter correct credentials or check your VPN")
 
 
-class SurveyManager:
+class SurveyManager(Ingest):
 
     def __init__(self, app=None, engine_string=SQLALCHEMY_DATABASE_URI):
         """
@@ -69,6 +69,7 @@ class SurveyManager:
             app: Flask - Flask app
             engine_string: str - Engine string
         """
+        super().__init__()
         if app:
             self.db = SQLAlchemy(app)
             self.session = self.db.session
@@ -101,7 +102,7 @@ class SurveyManager:
         Returns: None
         """
         session = self.session
-        fa, ca = download_model_from_s3(s3_bucket=bucket, fa_path=fa_path, ca_path=ca_path)
+        fa, ca = self.download_model_from_s3(s3_bucket=bucket, fa_path=fa_path, ca_path=ca_path)
         pca_features = fa.transform(survey)
         cluster = ca.predict(pca_features)[0]
         user_record = UserData(name=username, password=password,
@@ -123,15 +124,6 @@ class SurveyManager:
                                image=image)
         session.add(user_record)
         session.commit()
-        '''
-        try:
-            session.add(user_record)
-            session.commit()
-            logger.info(f"New user {username} added to database.")
-        except Exception:
-            session.rollback()
-            logger.error(f"Failed to add {username} to database.")
-        '''
 
     def clear_table(self):
         """Clear table in case things go wrong in the data ingestion process."""
@@ -159,11 +151,17 @@ class SurveyManager:
         session = self.session
 
         # prepare data for bulk upload
-        offline_model = OfflineModeling(s3_bucket, data_path=data_path, codebook_path=codebook_path)
-        pca_features, ca_labels = offline_model.initialize_models()
-        offline_model.save_models(fa_path=fa_path, ca_path=ca_path)
+        offline_model = OfflineModeling()
+        data = self.download_data_from_s3(s3_bucket=s3_bucket, s3_path_data=data_path,
+                                          s3_path_codebook=codebook_path)
+        pca_features, ca_labels = offline_model.initialize_models(data)
 
-        metadata = offline_model.data.iloc[:, 164:].values
+        # save models to s3
+        self.upload_model_to_s3(s3_bucket, offline_model.fa, fa_path)
+        self.upload_model_to_s3(s3_bucket, offline_model.ca, ca_path)
+        logging.info(f'models uploaded to {self.s3}.')
+
+        metadata = data.iloc[:, 164:].values
 
         # reformat data - just the first 100 records for upload
         records = [UserData(name=f'Fake Brian Rice {i}',
@@ -201,5 +199,3 @@ class SurveyManager:
         except InternalError:
             logging.error('New record contains elements that mysql does not recognize. Maybe you have np.nan in a '
                           'column with type str.')
-
-
