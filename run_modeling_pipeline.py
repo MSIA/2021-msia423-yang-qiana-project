@@ -1,19 +1,13 @@
 import argparse
-import yaml
 import pandas as pd
 
-from factor_analyzer.factor_analyzer import FactorAnalyzer
-from sklearn.cluster import KMeans
-
 from src.ingest import Ingest
-from config.flaskconfig import s3_bucket, CODEBOOK_PATH, DATA_PATH, logging
+from src.modeling import OfflineModeling
+from config.flaskconfig import logging
 
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-
-    with open('config/modeling.yaml', 'r') as f:
-        config = yaml.safe_load(f)
 
     # Add parsers for data ingestion pipeline
     parser = argparse.ArgumentParser(description="Create and/or add data to database")
@@ -21,9 +15,6 @@ if __name__ == '__main__':
 
     # Sub-parser for downloading data
     sb_download = subparsers.add_parser("download_data", description="Download data from s3")
-    sb_download.add_argument("-b", "--bucket", default=s3_bucket, help="s3_bucket_name")
-    sb_download.add_argument("-c", "--codebook", default=CODEBOOK_PATH, help="codebook")
-    sb_download.add_argument("-d", "--data", default=DATA_PATH, help="data_filepath")
     sb_download.add_argument("-o", '--output', default=None, help="local_output_filepath")
 
     # Sub-parser for generating features
@@ -39,27 +30,24 @@ if __name__ == '__main__':
     args = parser.parse_args()
     sp_used = args.command
 
+    model = OfflineModeling()
+
     if sp_used == 'download_data':
-        data, codebook = Ingest().download_data_from_s3(s3_bucket=args.bucket,
-                                                        s3_path_data=args.data,
-                                                        s3_path_codebook=args.codebook)
-        output = data
+        output = Ingest().download_data_from_s3()[0]
 
     elif sp_used == 'generate_features':
         data = pd.read_csv(args.input)
         survey = data.iloc[:, 1:164]
 
         # fit and transform raw survey data with factor analysis
-        fa = FactorAnalyzer(**config['generate_features'])
-        fa.fit(survey)
-        arrays = fa.transform(survey)
+        model.fa.fit(survey)
+        arrays = model.fa.transform(survey)
         output = pd.DataFrame(arrays)
 
     elif sp_used == 'train_model':
         data = pd.read_csv(args.input).values
-        ca = KMeans(n_clusters=10, random_state=42)
-        ca.fit(data)
-        clusters = ca.labels_
+        model.ca.fit(data)
+        clusters = model.ca.labels_
         logger.info(f'Generated clusters: {clusters[:5]}')
         output = None
 

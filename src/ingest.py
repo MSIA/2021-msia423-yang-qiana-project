@@ -8,7 +8,7 @@ import os
 import boto3
 import botocore.exceptions
 
-from config.flaskconfig import logging, data_source, s3_bucket, DATA_PATH, CODEBOOK_PATH, FA_PATH, CA_PATH
+from config.flaskconfig import logging, DATA_SOURCE, S3_BUCKET, DATA_PATH, CODEBOOK_PATH, FA_PATH, CA_PATH
 
 logger = logging.getLogger('ingest')
 
@@ -26,7 +26,7 @@ class Ingest:
     def download(self):
         """download static, publicly available data and codebook"""
         try:
-            response = requests.get(data_source)
+            response = requests.get(DATA_SOURCE)
         except requests.exceptions.RequestException:
             logger.error("Cannot make web requests to download the data source.")
             return 0
@@ -45,23 +45,23 @@ class Ingest:
         data, codebook = self.download()
 
         # write codebook to target path
-        self.s3.put_object(Body=codebook, Bucket=s3_bucket, Key=CODEBOOK_PATH)
+        self.s3.put_object(Body=codebook, Bucket=S3_BUCKET, Key=CODEBOOK_PATH)
 
         # write csv to target path - keep the index as 'user'
         data.index.name = 'user'
         data.to_csv(f's3://{s3_bucket}/{DATA_PATH}', index=True)
-        logger.info(f"Codebook and data uploaded to {s3_bucket}.")
+        logger.info(f"Codebook and data uploaded to {S3_BUCKET}.")
 
     def download_data_from_s3(self):
         """read data and codebook from s3 bucket"""
 
         # read codebook
-        result = self.s3.get_object(Bucket=s3_bucket, Key=CODEBOOK_PATH)
+        result = self.s3.get_object(Bucket=S3_BUCKET, Key=CODEBOOK_PATH)
         text = result['Body'].read().decode()
 
         # read csv file
-        data = pd.read_csv(f's3://{s3_bucket}/{DATA_PATH}')
-        logger.info(f"Codebook and data downloaded from {s3_bucket}.")
+        data = pd.read_csv(f's3://{S3_BUCKET}/{DATA_PATH}')
+        logger.info(f"Codebook and data downloaded from {S3_BUCKET}.")
 
         return data, text
 
@@ -76,15 +76,15 @@ class Ingest:
         """
         pickle_obj = pickle.dumps(fitted_model)
         # write codebook to target path
-        self.s3.put_object(Body=pickle_obj, Bucket=s3_bucket, Key=filepath)
-        logger.info(f"Model uploaded to {s3_bucket}/{filepath}.")
+        self.s3.put_object(Body=pickle_obj, Bucket=S3_BUCKET, Key=filepath)
+        logger.info(f"Model uploaded to {S3_BUCKET}/{filepath}.")
 
     def download_model_from_s3(self):
         """download fitted models from s3 bucket"""
 
-        fa_pickle_obj = self.s3.get_object(Bucket=s3_bucket, Key=FA_PATH)['Body'].read()
-        ca_pickle_obj = self.s3.get_object(Bucket=s3_bucket, Key=CA_PATH)['Body'].read()
-        logger.info(f"Fitted models downloaded from {s3_bucket}.")
+        fa_pickle_obj = self.s3.get_object(Bucket=S3_BUCKET, Key=FA_PATH)['Body'].read()
+        ca_pickle_obj = self.s3.get_object(Bucket=S3_BUCKET, Key=CA_PATH)['Body'].read()
+        logger.info(f"Fitted models downloaded from {S3_BUCKET}.")
 
         fa = pickle.loads(fa_pickle_obj)
         ca = pickle.loads(ca_pickle_obj)

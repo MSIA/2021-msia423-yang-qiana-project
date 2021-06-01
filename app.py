@@ -6,11 +6,10 @@ from wtforms.validators import ValidationError
 from src.create_db import UserData, SurveyManager
 from src.forms import Registration as Registration
 from src.forms import LoginForm as LoginForm
-from config.flaskconfig import FA_PATH, CA_PATH, s3_bucket, MAX_ROWS_SHOW
+from config.flaskconfig import MAX_ROWS_SHOW
 
 import pandas as pd
 import re
-
 from sqlalchemy.sql import text
 from base64 import b64encode
 
@@ -129,10 +128,7 @@ def register():
         raw_df = pd.DataFrame.from_dict(raw_data, orient='columns')
         app.logger.debug(f'Raw_df created from user input: {raw_df}')
         # add new user record
-        sm.add_user_record(bucket=s3_bucket,
-                           fa_path=FA_PATH,
-                           ca_path=CA_PATH,
-                           username=form.username.data,
+        sm.add_user_record(username=form.username.data,
                            password=form.password.data,
                            survey=raw_df,
                            age=form.age.data,

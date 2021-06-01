@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError, InternalError
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 
-from config.flaskconfig import logging, SQLALCHEMY_DATABASE_URI
+from config.flaskconfig import logging, SQLALCHEMY_DATABASE_URI, FA_PATH, CA_PATH
 from src.modeling import OfflineModeling
 from src.ingest import Ingest
 
@@ -43,22 +43,18 @@ class UserData(UserMixin, Base):
         return f'<Survey user {self.name} assigned to cluster {self.cluster}>'
 
 
-def create_new_db(eng_str=SQLALCHEMY_DATABASE_URI):
-    """create database from provided engine string
-
-        Args:
-            eng_str: str - Engine string
-
-        Returns: None
-    """
+def create_new_db():
+    """create database from provided engine string"""
     try:
-        engine = sqlalchemy.create_engine(eng_str)
+        engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI)
         Base.metadata.create_all(engine)
-        logger.warning('If a table with the same name already exists, it will not be updated with the new schema.')
-        logger.info(f"database created at {eng_str}.")
+        logger.warning(f'If a user_data table already exists, new schema will not be created.'
+                       f'Check mysql database to ensure user_data does not exist.')
+        logger.info(f"database created at {SQLALCHEMY_DATABASE_URI}.")
     except sqlalchemy.exc.OperationalError:
         # Checking for correct credentials
-        logger.error(f"create_db: Access to {eng_str} denied! Please enter correct credentials or check your VPN")
+        logger.error(f"create_db: Access to {SQLALCHEMY_DATABASE_URI} denied! Please enter correct credentials or "
+                     f"check your VPN.")
 
 
 class SurveyManager(Ingest):
@@ -85,13 +81,10 @@ class SurveyManager(Ingest):
         """Closes session"""
         self.session.close()
 
-    def add_user_record(self, bucket, fa_path, ca_path, username, password, age, gender, survey, image):
+    def add_user_record(self, username, password, age, gender, survey, image):
         """Add user survey record to existing database.
 
         Args:
-            bucket: str - s3 bucket
-            fa_path: str - path to factor analysis model in s3
-            ca_path: str - path to cluster analysis model in s3
             username: str - username
             password: str - password
             age: float - age
@@ -102,7 +95,7 @@ class SurveyManager(Ingest):
         Returns: None
         """
         session = self.session
-        fa, ca = self.download_model_from_s3(s3_bucket=bucket, fa_path=fa_path, ca_path=ca_path)
+        fa, ca = self.download_model_from_s3()
         pca_features = fa.transform(survey)
         cluster = ca.predict(pca_features)[0]
         user_record = UserData(name=username, password=password,
@@ -130,35 +123,25 @@ class SurveyManager(Ingest):
         session = self.session
         session.query(UserData).delete()
         session.commit()
+        logger.info('User data table cleared.')
 
     def drop_table(self):
         """drop user_data table from database."""
         UserData.__table__.drop(self.engine)
+        logger.info('User data table dropped.')
 
-    def upload_seed_data_to_rds(self, s3_bucket, data_path, codebook_path,
-                                fa_path, ca_path):
-        """upload reduced features and cluster assignment to rds and save models to s3
-
-        Args:
-            s3_bucket: str - s3 bucket name
-            data_path: str - data csv filepath in s3
-            codebook_path: str - codebook text filepath in s3
-            fa_path: str - path to save serialized factor analysis model in s3
-            ca_path: str - path to save serialized cluster analysis model in s3
-
-        Returns: None
-        """
+    def upload_seed_data_to_rds(self):
+        """upload reduced features and cluster assignment to rds and save models to s3"""
         session = self.session
 
         # prepare data for bulk upload
         offline_model = OfflineModeling()
-        data = self.download_data_from_s3(s3_bucket=s3_bucket, s3_path_data=data_path,
-                                          s3_path_codebook=codebook_path)
+        data = self.download_data_from_s3()[0]
         pca_features, ca_labels = offline_model.initialize_models(data)
 
         # save models to s3
-        self.upload_model_to_s3(s3_bucket, offline_model.fa, fa_path)
-        self.upload_model_to_s3(s3_bucket, offline_model.ca, ca_path)
+        self.upload_model_to_s3(offline_model.fa, filepath=FA_PATH)
+        self.upload_model_to_s3(offline_model.ca, filepath=CA_PATH)
         logging.info(f'models uploaded to {self.s3}.')
 
         metadata = data.iloc[:, 164:].values
@@ -196,6 +179,8 @@ class SurveyManager(Ingest):
         except IntegrityError:
             logging.error('New records trespass schema restrictions. Maybe you are trying to upload a primary key '
                           'that already exists or insert NA values in a non-nullable column.')
+            session.rollback()
         except InternalError:
             logging.error('New record contains elements that mysql does not recognize. Maybe you have np.nan in a '
                           'column with type str.')
+            session.rollback()

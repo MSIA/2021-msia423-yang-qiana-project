@@ -7,10 +7,10 @@ logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
                     level=logging.DEBUG)
 
 # data source
-data_source = 'http://openpsychometrics.org/_rawdata/16PF.zip'
+DATA_SOURCE = 'http://openpsychometrics.org/_rawdata/16PF.zip'
 
 # s3 credentials
-s3_bucket = os.environ.get("S3_BUCKET")
+S3_BUCKET = os.environ.get("S3_BUCKET")
 
 # mysql rds credentials
 conn_type = "mysql+pymysql"
@@ -34,14 +34,22 @@ APP_NAME = "A Fun App"
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 HOST = "0.0.0.0"
 SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
-MAX_ROWS_SHOW = 100
+MAX_ROWS_SHOW = 10
 LOGGING_CONFIG = 'config/logging/logging.conf'
 SECRET_KEY = b'123'
 MAX_CONTENT_LENGTH = 20500  # limit file size to 20KB
 UPLOAD_EXTENSIONS = ['.jpg', '.png', '.gif']
 
 # file paths
-CODEBOOK_PATH = 'raw/codebook.txt'
-DATA_PATH = 'raw/data.csv'
-FA_PATH = 'model/fa.pkl'
-CA_PATH = 'model/ca.pkl'
+CODEBOOK_PATH = os.environ.get('CODEBOOK_PATH')
+if CODEBOOK_PATH is None:
+    CODEBOOK_PATH = 'raw/codebook.txt'
+DATA_PATH = os.environ.get('DATA_PATH')
+if DATA_PATH is None:
+    DATA_PATH = 'raw/data.csv'
+FA_PATH = os.environ.get('FA_PATH')
+if FA_PATH is None:
+    FA_PATH = 'model/fa.pkl'
+CA_PATH = os.environ.get('CA_PATH')
+if CA_PATH is None:
+    CA_PATH = 'model/ca.pkl'
