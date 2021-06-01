@@ -10,8 +10,6 @@ Perhaps you are an MSiA student new to the program, hoping to find compatible pa
 
 **Vision**
 
-We don't always have the opportunity to get to know everyone in our community beyond a superficial level. However, we are constantly expected to work with others as part of a team. Business projects and personal life can become dangerously stressful when you and your partner(s) have drastically incompatible personalities.
-
 This app aims to help users find other users with similar personality traits. If deployed in professional settings, the app can also help users make informed decisions about who to team up with on a business project.
 
 **Mission**
@@ -24,7 +22,7 @@ Although the app will ultimately rely on real-time data from its user base, it w
 
 *Machine learning performance metric:* 
 
-Because the recommendation system employs unsupervised learning algorithms, we will use a number of non-traditional model/feature selection metrics to ensure the robustness of our approach. For now, we will rely on the silhoutte score and reduction in SSE to select the optimal number of clusters, and use the Kaiser criteria for dimensionality reduction and factor analysis. Since the method is unsupervised, there's no hard success threshold we can aim for &ndash; however, I hope to retain features that capture around 95% of the variation in the data as I perform factor analysis.
+Because the recommendation system uses unsupervised learning algorithms, we will rely on the silhoutte score and reduction in SSE to select the optimal number of clusters, and use the Kaiser criteria for dimensionality reduction and factor analysis. There's no hard success threshold we can aim for &ndash, but I hope to retain features that capture around 95% of the variation in the data as I perform factor analysis.
 
 Once the app is launched, we can then calculate the precision, recall, AUC, and F1 score of our recommendation engine based on dynamic user feedback. Tinder's current algorithm has an astonishing AUC of 90% and F1 of 85% &ndash; these are the numbers I'll be aiming for. 
 
@@ -32,7 +30,7 @@ Once the app is launched, we can then calculate the precision, recall, AUC, and 
 
 We can measure the business value of the app based on user acquisition rates, churn rates, user engagement metrics (e.g. average session duration and total time on app), and of course, the number of successful matches made based on user feedback (e.g. number of successful matches divided by total time on app per user).
 
-## Running the App
+## User Manual
 
 #### 1. Set Configurations
 
@@ -57,113 +55,110 @@ export FA_PATH=<factor_analysis_model_path>
 export CA_PATH=<clustering_model_path>
 ```
 
-#### 2. Acquire Raw Data and Upload to S3
+#### 2. Data Ingestion
 
-
-Initialize the database 
-
-#### Create the database 
-
-**Data download and S3 upload instructions**
-
-We are going to download a static, public dataset, extract the zip file in Python, and upload the extracted files (a 12MB csv file and a corresponding data codebook that explains different fields in the data columns) to an S3 bucket without saving the files locally. The command to perform the task is as follows:
-
+We will run all the commands within a docker virtual machine from here on. First, build a docker image in the root directory:
 ```shell script
-python run.py ingest -b <s3_bucket_name> [-c] [<codebook_path>] [-d] [<data_path>]
+make image
 ```
-When running the command, make sure you have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set as environment variables (i.e. `os.environ.get('AWS_ACCESS_KEY_ID')` or `os.environ.get('AWS_SECRET_ACCESS_KEY')` do not return `None`). You can do so via the following command:
-
+Then, acquire raw data and codebook from openpsychometrics.com and upload them to s3:
 ```shell script
-export AWS_ACCESS_KEY_ID='<aws_access_key_id>'
-export AWS_SECRET_ACCESS_KEY='<aws_secret_access_key>'
+make ingest
 ```
-
-Note that you must specify a valid *s3_bucket_name* for successful data upload. You may also specify custom codebook path or data path in S3. The default filepaths are `'raw/codebook.txt'` and `'raw/data.csv'` respectively. 
-
-You also need to be connected to the Northwestern VPN to run the command.
-
-Finally, you may reset the logging configuration level in *config/flaskconfig.py*.
-
-**Database schema creation instructions**
-
-First, you need to set environment variables. Depending on which variables you have provided, different default values for SQLAlchemy's connection engine string will be set. You may specify your engine string with the environment variable `SQLALCHEMY_DATABASE_URI`.
-
-If `SQLALCHEMY_DATABASE_URI` is not provided as an environment variable, then the system will be looking for the environment variable `MYSQL_HOST` and attempt to create the database on RDS. For the command to successfully run at this step, you also need to set the following environment variables: MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, and DATABASE_NAME.
-
-If none of these variables are provided, the system will create a local sqlite database at the default location `'./data/data.db'`. 
-
-Finally, you may specify your own engine string in lieu of providing an environment variable. To do so, see the command line argument below. Note that if you specify your own engine string, that will override the default engine strings created by my script even if you have also created the environment variables I've talked about above.
-
-Once you have configured your environment variables, run the following command at root directory: 
-```sh
-python run.py create_db [-g] [<engine string>]
-```
-If you want to use your own custom engine string instead, simply specify the `-g` optional argument. Keep in mind that the format for engine strings is `{conn_type}://{user}:{password}@{host}:{port}/{db_name}`.
-
-Caveat: if you try to create a table that already exists (i.e. having the same table name) in the database you specified, no new table would be created. In other words, the old table would remain the same as it was. To override the old table, you need to drop the table first within the mysql interface and then re-run the command above.
-
-**Run the Above Pipeline in Docker**
-
-First, clone the repository and navigate to the root directory. Run the following commands to build a Docker image:
-```sh
-docker build -t qiana_project .
-```
-Once a Docker image is built, we will upload raw data to S3 with the following command:
-```sh
-docker run -it \
-    -e AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY \
-    qiana_project run.py ingest \
-    -b <s3_bucket_name> \
-    [-c] [<codebook_path>] \
-    [-d] [<data_path>]
-```
-Then, create database schema in RDS (non-locally) with the following command:
-```sh
-docker run -it \
-    -e MYSQL_HOST \
-    -e MYSQL_PORT \
-    -e MYSQL_USER \
-    -e MYSQL_PASSWORD \
-    -e DATABASE_NAME \
-    qiana_project run.py create_db \
-    [-g] [<engine_string>]
-```
-You may also create the schema locally in the `data` directory (default filepath is `data/data.db`):
-```sh
-docker run -it \
-    qiana_project run.py create_db \
-    [-g] [<engine_string>]
-```
-Or, specify your own engine string and output path with the `SQLALCHEMY_DATABASE_URI` environment variable:
+Next, create the schema for a user record table in a database. Run the following command to set up the table in RDS:
 ```shell script
-docker run -it \
-    -e SQLALCHEMY_DATABASE_URI \
-    qiana_project run.py create_db \
-    [-g] [<engine_string>]
+make create_db_rds
 ```
-If you are a Windows user, add `winpty` before each `docker run` statement. 
+Alternatively, you can create the table in a local sqlite database for development purposes:
+```shell script
+make create_db_local
+```
+You may also specify your own 'engine string' (database connection string) with the `SQLALCHEMY_DATABASE_URI` environment variable, which follows the `"{conn_type}://{user}:{password}@{host}:{port}/{db_name}"` format:
+```shell script
+export SQLALCHEMY_DATABASE_URI=<engine_string>
+make create_db_custom
+```
+When using AWS RDS, make sure that you are connected to the Northwestern VPN.
 
-## Content
+#### 3. Offline Modeling & Seed User Upload
 
-<!-- toc -->
+Now, we download data from s3, perform factor analysis (feature generation) and cluster analysis (user personality group assginment), upload trained models to s3, and load seed user records (100 anonymized user profiles) into RDS with the following command:
+```sh
+make upload_seed
+```
 
-- [Directory structure](#directory-structure)
-- [Running the app](#running-the-app)
-  * [1. Initialize the database](#1-initialize-the-database)
-    + [Create the database with a single song](#create-the-database-with-a-single-song)
-    + [Adding additional songs](#adding-additional-songs)
-    + [Defining your engine string](#defining-your-engine-string)
-      - [Local SQLite database](#local-sqlite-database)
-  * [2. Configure Flask app](#2-configure-flask-app)
-  * [3. Run the Flask app](#3-run-the-flask-app)
-- [Running the app in Docker](#running-the-app-in-docker)
-  * [1. Build the image](#1-build-the-image)
-  * [2. Run the container](#2-run-the-container)
-  * [3. Kill the container](#3-kill-the-container)
-  * [Workaround for potential Docker problem for Windows.](#workaround-for-potential-docker-problem-for-windows)
+#### 4. Database Manipulation
+From here on, you have the option to examine the database within the mysql interface. If you haven't already done so, initialize a docker image:
+```sh
+make mysql_init
+```
+Log into the interactive interface with the following command:
+```sh
+make mysql
+```
+Within the dashboard, select the database that houses the user record table, print the table names within the database, and print the table schema with the following commands respectively:
+```
+use <database_name>;
+show tables;
+describe <table_name>;
+```
+You may also perform regular SQL queries here.
 
-<!-- tocstop -->
+During the development phase, if you need to drop all user records from the table or drop the table from the database, you may execute the following commands in shell:
+```sh
+make clear_table
+make drop_table
+```
+
+#### 5. Modeling Pipeline and Testing
+
+Although you should run `make upload_seed` in deployment to train and save the models, there is also the option to tune and test the models in development setting. First, download the ingested data from s3 with:
+```sh
+make modeling_data
+```
+Then, generate features with factor analysis:
+```sh
+make modeling_features
+```
+Next, assign records to different groupings with cluster analysis:
+```sh
+make modeling_train
+```
+Finally, ensure model reproducibility with unit tests:
+```sh
+make modeling_test
+```
+The data download and feature generation steps will write csv files to the `test/` folder. The cluster analysis step will print the first 5 cluster assignment results. The unit tests download raw data from s3, perform the modeling steps, make cluster prediction on a custom row, and compare the results with the trained models we previously saved to s3. You may also change the default model hyperparameter settings in `config/modeling.yaml`.
+
+After model tuning and testing, you may remove the csv files created in the `test/` folder:
+```sh
+make modeling_clear
+```
+You may also choose to complete all the steps in this section with one simple command:
+```sh
+make modeling
+```
+
+#### 6. App Deployment
+
+As soon as you load the seed user data to RDS in <b>Step 3</b>, you may start running the flask app with the following command:
+```sh
+make run_app
+```
+You should now be able to access the app at http://0.0.0.0:5000/ in your browser.
+
+In lieu of running the individual commands in <b>Step 1-3</b>, you may also deploy the app from scratch with one command:
+```sh
+make app_init
+```
+This takes care of everything from building the docker image to running the app.
+
+During the development phase, you may remove your RDS table, your docker containers and images with the following command:
+```sh
+make app_reset
+```
+However, this step is not recommended once app is out in public.
+
 
 ## Directory structure 
 
@@ -188,105 +183,3 @@ If you are a Windows user, add `winpty` before each `docker run` statement.
 ├── run.py                            <- Simplifies the execution of one or more of the src scripts  
 ├── requirements.txt                  <- Python package dependencies 
 ```
-
-
-
-### 2. Configure Flask app 
-
-`config/flaskconfig.py` holds the configurations for the Flask app. It includes the following configurations:
-
-```python
-DEBUG = True  # Keep True for debugging, change to False when moving to production 
-LOGGING_CONFIG = "config/logging/local.conf"  # Path to file that configures Python logger
-HOST = "0.0.0.0" # the host that is running the app. 0.0.0.0 when running locally 
-PORT = 5000  # What port to expose app on. Must be the same as the port exposed in app/Dockerfile 
-SQLALCHEMY_DATABASE_URI = 'sqlite:///data/tracks.db'  # URI (engine string) for database that contains tracks
-APP_NAME = "penny-lane"
-SQLALCHEMY_TRACK_MODIFICATIONS = True 
-SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
-MAX_ROWS_SHOW = 100 # Limits the number of rows returned from the database 
-```
-
-### 3. Run the Flask app 
-
-To run the Flask app, run: 
-
-```bash
-python app.py
-```
-
-You should now be able to access the app at http://0.0.0.0:5000/ in your browser.
-
-## Running the app in Docker 
-
-### 1. Build the image 
-
-The Dockerfile for running the flask app is in the `app/` folder. To build the image, run from this directory (the root of the repo): 
-
-```bash
- docker build -f app/Dockerfile -t pennylane .
-```
-
-This command builds the Docker image, with the tag `pennylane`, based on the instructions in `app/Dockerfile` and the files existing in this directory.
- 
-### 2. Run the container 
-
-To run the app, run from this directory: 
-
-```bash
-docker run -p 5000:5000 --name test pennylane
-```
-You should now be able to access the app at http://0.0.0.0:5000/ in your browser.
-
-This command runs the `pennylane` image as a container named `test` and forwards the port 5000 from container to your laptop so that you can access the flask app exposed through that port. 
-
-If `PORT` in `config/flaskconfig.py` is changed, this port should be changed accordingly (as should the `EXPOSE 5000` line in `app/Dockerfile`)
-
-### 3. Kill the container 
-
-Once finished with the app, you will need to kill the container. To do so: 
-
-```bash
-docker kill test 
-```
-
-where `test` is the name given in the `docker run` command.
-
-### Example using `python3` as an entry point
-
-We have included another example of a Dockerfile, `app/Dockerfile_python` that has `python3` as the entry point such that when you run the image as a container, the command `python3` is run, followed by the arguments given in the `docker run` command after the image name. 
-
-To build this image: 
-
-```bash
- docker build -f app/Dockerfile_python -t pennylane .
-```
-
-then run the `docker run` command: 
-
-```bash
-docker run -p 5000:5000 --name test pennylane app.py
-```
-
-The new image defines the entry point command as `python3`. Building the sample PennyLane image this way will require initializing the database prior to building the image so that it is copied over, rather than created when the container is run. Therefore, please **do the step [Create the database with a single song](#create-the-database-with-a-single-song) above before building the image**.
-
-# Testing
-
-From within the Docker container, the following command should work to run unit tests when run from the root of the repository: 
-
-```bash
-python -m pytest
-``` 
-
-Using Docker, run the following, if the image has not been built yet:
-
-```bash
- docker build -f app/Dockerfile_python -t pennylane .
-```
-
-To run the tests, run: 
-
-```bash
- docker run penny -m pytest
-```
- 
