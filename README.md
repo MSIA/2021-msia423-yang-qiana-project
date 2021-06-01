@@ -147,13 +147,11 @@ make run_app
 ```
 You should now be able to access the app at http://0.0.0.0:5000/ in your browser.
 
-In lieu of running the individual commands in <b>Step 1-3</b>, you may also deploy the app from scratch with one command:
+In lieu of running the individual commands in <b>Step 1-3 and Step 6</b>, you may also set up and launch the app from scratch with one command:
 ```sh
 make app_init
 ```
-This takes care of everything from building the docker image to running the app.
-
-During the development phase, you may remove your RDS table, your docker containers and images with the following command:
+During the development phase, after you finish running the app, you may remove your RDS table, your docker containers and images with the following command:
 ```sh
 make app_reset
 ```
