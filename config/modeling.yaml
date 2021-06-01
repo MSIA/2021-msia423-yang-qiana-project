@@ -1,0 +1,12 @@
+model:
+  name: qiana_project
+  author: Qiana Yang
+  version: AA1
+  description: factor analysis + cluster analysis for Qiana's recommender app.
+  dependencies: requirements.txt
+generate_features:
+  n_factors: 12
+  rotation: promax
+train_model:
+  n_clusters: 10
+  random_state: 42

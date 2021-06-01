@@ -2,87 +2,92 @@ import requests
 import zipfile36 as zipfile
 from io import BytesIO
 import pandas as pd
+import pickle
 import os
 
 import boto3
 import botocore.exceptions
 
-from config.flaskconfig import logging, data_source
+from config.flaskconfig import logging, DATA_SOURCE, S3_BUCKET, DATA_PATH, CODEBOOK_PATH, FA_PATH, CA_PATH
 
 logger = logging.getLogger('ingest')
 
 
-def download():
-    """download static, publicly available data and codebook"""
-    try:
-        response = requests.get(data_source)
-    except requests.exceptions.RequestException:
-        logger.error("Cannot make web requests to download the data source.")
-        return 0
+class Ingest:
 
-    file = zipfile.ZipFile(BytesIO(response.content))
-    files = file.namelist()
-    with file.open(files[1]) as csv:
-        data = pd.read_csv(csv, delimiter='\t')
-    with file.open(files[0]) as html:
-        codebook = html.read()
-    return data, codebook
+    def __init__(self):
+        try:
+            self.s3 = boto3.client('s3', aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+                                   aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'))
+        except botocore.exceptions.PartialCredentialsError:
+            # Checking for valid AWS credentials
+            logger.error("Please provide valid AWS credentials")
 
+    def download(self):
+        """download static, publicly available data and codebook"""
+        try:
+            response = requests.get(DATA_SOURCE)
+        except requests.exceptions.RequestException:
+            logger.error("Cannot make web requests to download the data source.")
+            return 0
 
-def upload_data_to_s3(s3_bucket, s3_path_codebook, s3_path_data):
-    """upload data and codebook to s3 bucket without saving the files locally
+        file = zipfile.ZipFile(BytesIO(response.content))
+        files = file.namelist()
+        with file.open(files[1]) as csv:
+            data = pd.read_csv(csv, delimiter='\t')
+        with file.open(files[0]) as html:
+            codebook = html.read()
+        return data, codebook
 
-        Args:
-            s3_bucket: str - S3 bucket name
-            s3_path_codebook: str - filepath to codebook in S3
-            s3_path_data: str - filepath to data.csv in S3
+    def upload_data_to_s3(self):
+        """upload data and codebook to s3 bucket"""
+        # download data
+        data, codebook = self.download()
 
-        Returns: None
-    """
-    # download data
-    data, codebook = download()
+        # write codebook to target path
+        self.s3.put_object(Body=codebook, Bucket=S3_BUCKET, Key=CODEBOOK_PATH)
 
-    try:
-        s3 = boto3.client('s3', aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-                          aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'))
-    except botocore.exceptions.PartialCredentialsError:
-        # Checking for valid AWS credentials
-        logger.error("Please provide valid AWS credentials")
+        # write csv to target path - keep the index as 'user'
+        data.index.name = 'user'
+        data.to_csv(f's3://{S3_BUCKET}/{DATA_PATH}', index=True)
+        logger.info(f"Codebook and data uploaded to {S3_BUCKET}.")
 
-    # write codebook to target path
-    s3.put_object(Body=codebook, Bucket=s3_bucket, Key=s3_path_codebook)
+    def download_data_from_s3(self):
+        """read data and codebook from s3 bucket"""
 
-    # write csv to target path - keep the index as 'user'
-    data.index.name = 'user'
-    data.to_csv(f's3://{s3_bucket}/{s3_path_data}', index=True)
-    logger.info(f"Codebook and data uploaded to {s3_bucket}.")
+        # read codebook
+        result = self.s3.get_object(Bucket=S3_BUCKET, Key=CODEBOOK_PATH)
+        text = result['Body'].read().decode()
 
+        # read csv file
+        data = pd.read_csv(f's3://{S3_BUCKET}/{DATA_PATH}')
+        logger.info(f"Codebook and data downloaded from {S3_BUCKET}.")
 
-def download_data_from_s3(s3_bucket, s3_path_codebook, s3_path_data):
-    """read data and codebook from s3 bucket locally
+        return data, text
 
-        Args:
-            s3_bucket: str - S3 bucket name
-            s3_path_codebook: str - filepath to codebook in S3
-            s3_path_data: str - filepath to data.csv in S3
+    def upload_model_to_s3(self, fitted_model, filepath):
+        """upload fitted models to s3 bucket
 
-        Returns:
-            :obj: pandas dataframe (data.csv) and str (codebook.txt)
-    """
-    try:
-        s3 = boto3.client('s3', aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-                          aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'))
-    except botocore.exceptions.PartialCredentialsError:
-        # Checking for valid AWS credentials
-        logger.error("Please provide valid AWS credentials")
+            Args:
+                fitted_model: :obj: sklearn-compatible model - fitted model
+                filepath: str - path to save serialized factor analysis model in s3
 
-    # read codebook
-    result = s3.get_object(Bucket=s3_bucket, Key=s3_path_codebook)
-    text = result['Body'].read().decode()
+            Returns: None
+        """
+        pickle_obj = pickle.dumps(fitted_model)
+        # write codebook to target path
+        self.s3.put_object(Body=pickle_obj, Bucket=S3_BUCKET, Key=filepath)
+        logger.info(f"Model uploaded to {S3_BUCKET}/{filepath}.")
 
-    # read csv file
-    data = pd.read_csv(f's3://{s3_bucket}/{s3_path_data}')
+    def download_model_from_s3(self):
+        """download fitted models from s3 bucket"""
 
-    logger.info(f"Codebook and data downloaded from {s3_bucket}.")
+        fa_pickle_obj = self.s3.get_object(Bucket=S3_BUCKET, Key=FA_PATH)['Body'].read()
+        ca_pickle_obj = self.s3.get_object(Bucket=S3_BUCKET, Key=CA_PATH)['Body'].read()
+        logger.info(f"Fitted models downloaded from {S3_BUCKET}.")
 
-    return data, text
+        fa = pickle.loads(fa_pickle_obj)
+        ca = pickle.loads(ca_pickle_obj)
+        logger.info("Fitted models loaded.")
+
+        return fa, ca

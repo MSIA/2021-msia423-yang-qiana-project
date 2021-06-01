@@ -6,11 +6,12 @@ __pycache__/
 .DS_Store
 .idea/
 .ipynb_checkpoints/
-.mysqlconfig
-.awsconfig
+.projectconfig
 
 data/*
+copilot/*
 !data/sample/
 !data/external/
 config/local
 !.gitkeep
+test/*.csv

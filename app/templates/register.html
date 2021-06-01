@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Register</h1>
+    <form action="" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}<br>
+            {% for error in form.username.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}<br>
+            {% for error in form.password.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p>
+            {{ form.password2.label }}<br>
+            {{ form.password2(size=32) }}<br>
+            {% for error in form.password2.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <table>
+        {% for field in form %}
+            <tr>
+                {% if (field.type == 'RadioField') and (field.label.field_id != 'gender') %}
+                    <td>{{ field.label }}</td>
+                    {% for subfield in field %}
+                        <td>{{ subfield }}</td>
+                        <td>{{ subfield.label }}</td>
+                    {% endfor %}
+                    {% for error in field.errors %}
+                        <td><span style="color: red;">[{{ error }}]</span></td>
+                    {% endfor %}
+                {% endif %}
+            </tr>
+        {% endfor %}
+        </table><br>
+        <p>
+            <b>Optional fields:</b><br><br>
+            <tr>{{ form.age.label }}: {{ form.age(size=10) }}</tr><br>
+            {% for error in form.age.errors %}
+                <tr><span style="color: red;">[{{ error }}]</span></tr>
+            {% endfor %}<br>
+            <tr>{{ form.gender.label }}:</tr>
+            {% for subfield in form.gender %}
+                <tr>{{ subfield }}</tr>
+                <tr>{{ subfield.label }}</tr>
+            {% endfor %}<br>
+            {% for error in form.gender.errors %}
+                <tr><span style="color: red;">[{{ error }}]</span></tr>
+            {% endfor %}<br><br>
+            <b>Upload profile picture: (limit 20KB)</b><br><br>
+            {{ form.photo }}
+            {% for error in form.photo.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+        </p>
+        <p>{{ form.submit() }}</p>
+    </form>
+{% endblock %}

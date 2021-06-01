@@ -1,4 +1,4 @@
-# Find Like-Minded Souls: A People-to-People Reciprocal Recommendation System
+# Find Like-Minded Souls: A Reciprocal Recommendation System
 
 Qiana Yang, with QA contributions from Louis-Charles Généreux
 
@@ -10,7 +10,7 @@ Perhaps you are an MSiA student new to the program, hoping to find compatible pa
 
 **Vision**
 
-In today's fast-paced environment, we don't always have the opportunity to get to know everyone in our community beyond a superficial level. However, we are constantly expected to work with others as part of a team. Business projects and personal life can become dangerously stressful when you and your partner(s) have drastically incompatible personalities.
+We don't always have the opportunity to get to know everyone in our community beyond a superficial level. However, we are constantly expected to work with others as part of a team. Business projects and personal life can become dangerously stressful when you and your partner(s) have drastically incompatible personalities.
 
 This app aims to help users find other users with similar personality traits. If deployed in professional settings, the app can also help users make informed decisions about who to team up with on a business project.
 
@@ -32,8 +32,35 @@ Once the app is launched, we can then calculate the precision, recall, AUC, and 
 
 We can measure the business value of the app based on user acquisition rates, churn rates, user engagement metrics (e.g. average session duration and total time on app), and of course, the number of successful matches made based on user feedback (e.g. number of successful matches divided by total time on app per user).
 
-## Running the App (Midproject Checkpoint)
-### 1. Initialize the database 
+## Running the App
+
+#### 1. Set Configurations
+
+You will need to export a number of AWS and MYSQL configurations as environment variables to run the app. You may do so with the following command:
+```shell script
+export MYSQL_USER=<mysql_user>
+export MYSQL_PASSWORD=<mysql_password>
+export MYSQL_HOST=<mysql_host>
+export MYSQL_PORT=<mysql_port>
+export DATABASE_NAME=<database_name>
+export AWS_ACCESS_KEY_ID=<aws_access_key_id>
+export AWS_SECRET_ACCESS_KEY=<aws_secret_access_key>
+export S3_BUCKET=<s3_bucket_name>
+```
+`S3_BUCKET` is the s3 bucket where you will save your raw data and fitted models. `DATABASE_NAME` is the database where you will create your user record table to store dynamic user inputs. 
+
+During app setup, we will upload a series of artifacts to the s3 bucket. Those include a raw csv file comprising the seed data for our model and app, a data codebook for the csv file, a factor analysis model for feature generation, and a cluster analysis model for efficient SQL queries. The default s3 file paths for these 4 objects are in the `config/flaskconfig.py` file. However, you may override the defualt settings with relevant environment variables as follows:
+```
+export CODEBOOK_PATH=<codebook_path>
+export DATA_PATH=<data_path>
+export FA_PATH=<factor_analysis_model_path>
+export CA_PATH=<clustering_model_path>
+```
+
+#### 2. Acquire Raw Data and Upload to S3
+
+
+Initialize the database 
 
 #### Create the database 
 
@@ -117,7 +144,6 @@ docker run -it \
 ```
 If you are a Windows user, add `winpty` before each `docker run` statement. 
 
-### To Be Edited...
 ## Content
 
 <!-- toc -->
@@ -143,36 +169,16 @@ If you are a Windows user, add `winpty` before each `docker run` statement.
 
 ```
 ├── README.md                         <- You are here
-├── api
+├── app
 │   ├── static/                       <- CSS, JS files that remain static
 │   ├── templates/                    <- HTML (or other code) that is templated and changes based on a set of inputs
-│   ├── boot.sh                       <- Start up script for launching app in Docker container.
-│   ├── Dockerfile                    <- Dockerfile for building image to run app  
 │
 ├── config                            <- Directory for configuration files 
-│   ├── local/                        <- Directory for keeping environment variables and other local configurations that *do not sync** to Github 
-│   ├── logging/                      <- Configuration of python loggers
 │   ├── flaskconfig.py                <- Configurations for Flask API 
 │
-├── data                              <- Folder that contains data used or generated. Only the external/ and sample/ subdirectories are tracked by git. 
-│   ├── external/                     <- External data sources, usually reference data,  will be synced with git
-│   ├── sample/                       <- Sample data used for code development and testing, will be synced with git
+├── data                              <- Folder that contains data used or generated. Not tracked by git. 
 │
 ├── deliverables/                     <- Any white papers, presentations, final work products that are presented or delivered to a stakeholder 
-│
-├── docs/                             <- Sphinx documentation based on Python docstrings. Optional for this project. 
-│
-├── figures/                          <- Generated graphics and figures to be used in reporting, documentation, etc
-│
-├── models/                           <- Trained model objects (TMOs), model predictions, and/or model summaries
-│
-├── notebooks/
-│   ├── archive/                      <- Develop notebooks no longer being used.
-│   ├── deliver/                      <- Notebooks shared with others / in final state
-│   ├── develop/                      <- Current notebooks being used in development.
-│   ├── template.ipynb                <- Template notebook for analysis with useful imports, helper functions, and SQLAlchemy setup. 
-│
-├── reference/                        <- Any reference material relevant to the project
 │
 ├── src/                              <- Source data for the project 
 │
