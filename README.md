@@ -96,7 +96,7 @@ Log into the interactive interface with the following command:
 ```sh
 make mysql
 ```
-Within the dashboard, select the database that houses the user record table, print the table names within the database, and print the table schema with the following commands respectively:
+Within the dashboard, select the database that houses the user record table, print the table names in the database, and print the table schema with the following commands respectively:
 ```
 use <database_name>;
 show tables;
@@ -112,7 +112,7 @@ make drop_table
 
 #### 5. Modeling Pipeline and Testing
 
-Although you should run `make upload_seed` in deployment to train and save the models, there is also the option to tune and test the models in development setting. First, download the ingested data from s3 with:
+Although you should run `make upload_seed` in deployment to train and save the models, there is also the option to tune and test the models in development setting. First, download the ingested data from s3:
 ```sh
 make modeling_data
 ```
