@@ -4,7 +4,7 @@ import os
 # logging configurations
 logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%Y-%m-%d %I:%M:%S %p',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 
 # data source
 DATA_SOURCE = 'http://openpsychometrics.org/_rawdata/16PF.zip'

@@ -49,7 +49,7 @@ class Ingest:
 
         # write csv to target path - keep the index as 'user'
         data.index.name = 'user'
-        data.to_csv(f's3://{s3_bucket}/{DATA_PATH}', index=True)
+        data.to_csv(f's3://{S3_BUCKET}/{DATA_PATH}', index=True)
         logger.info(f"Codebook and data uploaded to {S3_BUCKET}.")
 
     def download_data_from_s3(self):

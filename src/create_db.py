@@ -127,8 +127,11 @@ class SurveyManager(Ingest):
 
     def drop_table(self):
         """drop user_data table from database."""
-        UserData.__table__.drop(self.engine)
-        logger.info('User data table dropped.')
+        try:
+            UserData.__table__.drop(self.engine)
+            logger.info('User data table dropped.')
+        except InternalError:
+            logger.error('Table was not created or was already dropped.')
 
     def upload_seed_data_to_rds(self):
         """upload reduced features and cluster assignment to rds and save models to s3"""
