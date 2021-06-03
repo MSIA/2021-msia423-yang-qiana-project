@@ -30,25 +30,67 @@ Once the app is launched, we can then calculate the precision, recall, AUC, and 
 
 We can measure the business value of the app based on user acquisition rates, churn rates, user engagement metrics (e.g. average session duration and total time on app), and of course, the number of successful matches made based on user feedback (e.g. number of successful matches divided by total time on app per user).
 
+
+## Directory structure 
+
+```
+├── README.md                         <- You are here
+├── app
+│   ├── static/                       <- static CSS files
+│   ├── templates/                    <- templated HTML files
+│
+├── config                            <- Directory for configuration files 
+│   ├── flaskconfig.py                <- Configurations for Flask API 
+│
+├── data                              <- Folder that contains data used or generated. Not tracked by git. 
+│
+├── deliverables/                     <- App presentation slides.
+│
+├── src/                              <- Source files for the app 
+│   ├── create_db.py                  <- Python objects to create database instance, generate schema, and manipulate records for the app
+│   ├── forms.py                      <- Flask forms for the registration and login pages
+│   ├── ingest.py                     <- Python class to acquire raw data and download/upload objects to s3
+│   ├── modeling.py                   <- Python class for the offline modeling process
+│
+├── test/                             <- Folder for running model tests
+│   ├── test_modeling.py                <- Unit test for the offline modeling process
+│
+├── app.py                            <- Flask wrapper for running the model 
+├── run.py                            <- Simplifies the execution of the src scripts 
+├── run_modeling_pipeline.py          <- Runs the offline modeling process in separate steps  
+├── requirements.txt                  <- Python package dependencies 
+├── run.py                            <- Simplifies the execution of one or more of the src scripts 
+├── Dockerfile                        <- File required to run the entire pipeline in docker
+├── Makefile                          <- File required to execute the docker commands as outlined in the section below
+```
+
+
 ## User Manual
 
 #### 1. Set Configurations
 
-You will need to export a number of AWS and MYSQL configurations as environment variables to run the app. You may do so with the following command:
+You will need to set a number of environment variables to run the app. First, you will need to execute the following to connect to an s3 bucket on AWS:
+```shell script
+export AWS_ACCESS_KEY_ID=<aws_access_key_id>
+export AWS_SECRET_ACCESS_KEY=<aws_secret_access_key>
+export S3_BUCKET=<s3_bucket_name>
+```
+Then, either set the following environment variables to connect to an RDS database:
 ```shell script
 export MYSQL_USER=<mysql_user>
 export MYSQL_PASSWORD=<mysql_password>
 export MYSQL_HOST=<mysql_host>
 export MYSQL_PORT=<mysql_port>
 export DATABASE_NAME=<database_name>
-export AWS_ACCESS_KEY_ID=<aws_access_key_id>
-export AWS_SECRET_ACCESS_KEY=<aws_secret_access_key>
-export S3_BUCKET=<s3_bucket_name>
 ```
-`S3_BUCKET` is the s3 bucket where you will save your raw data and fitted models. `DATABASE_NAME` is the database where you will create your user record table to store dynamic user inputs. 
+Or alternatively, set the following variable to connect to a custom database of your choice:
+```shell script
+export SQLALCHEMY_DATABASE_URI=<custom_database_engine_string>
+```
+*Even though you can set up a local sqlite instance for development and debugging, you will need a mysql database for final app deployment due to some syntactical constraints. More on this in the sections below.*
 
 During app setup, we will upload a series of artifacts to the s3 bucket. Those include a raw csv file comprising the seed data for our model and app, a data codebook for the csv file, a factor analysis model for feature generation, and a cluster analysis model for efficient SQL queries. The default s3 file paths for these 4 objects are in the `config/flaskconfig.py` file. However, you may override the defualt settings with relevant environment variables as follows:
-```
+```shell script
 export CODEBOOK_PATH=<codebook_path>
 export DATA_PATH=<data_path>
 export FA_PATH=<factor_analysis_model_path>
@@ -57,7 +99,7 @@ export CA_PATH=<clustering_model_path>
 
 #### 2. Data Ingestion
 
-We will run all the commands within a docker virtual machine from here on. First, build a docker image in the root directory:
+The following commands are used to build a virtual machine for app deployment. First, build a docker image in the root directory:
 ```shell script
 make image
 ```
@@ -73,9 +115,10 @@ Alternatively, you can create the table in a local sqlite database for developme
 ```shell script
 make create_db_local
 ```
-You may also specify your own 'engine string' (database connection string) with the `SQLALCHEMY_DATABASE_URI` environment variable, which follows the `"{conn_type}://{user}:{password}@{host}:{port}/{db_name}"` format:
+Note that the app requires a mysql database for advanced querying in final deployment.
+
+As mentioned in <b>Step 1</b>, you may also specify your own database connection string with the `SQLALCHEMY_DATABASE_URI` environment variable, in the format of `"{conn_type}://{user}:{password}@{host}:{port}/{db_name}"`:
 ```shell script
-export SQLALCHEMY_DATABASE_URI=<engine_string>
 make create_db_custom
 ```
 When using AWS RDS, make sure that you are connected to the Northwestern VPN.
@@ -97,22 +140,23 @@ Log into the interactive interface with the following command:
 make mysql
 ```
 Within the dashboard, select the database that houses the user record table, print the table names in the database, and print the table schema with the following commands respectively:
-```
+```mysql
 use <database_name>;
 show tables;
 describe <table_name>;
 ```
 You may also perform regular SQL queries here.
 
-During the development phase, if you need to drop all user records from the table or drop the table from the database, you may execute the following commands in shell:
+During development, you may execute the following commands to delete all records from the table or drop the table from the database:
 ```sh
 make clear_table
 make drop_table
 ```
+Please do not execute these two commands when the app is deployed.
 
 #### 5. Modeling Pipeline and Testing
 
-Although you should run `make upload_seed` in deployment to train and save the models, there is also the option to tune and test the models in development setting. First, download the ingested data from s3:
+Although you should run `make upload_seed` to deploy the app (which automatically trains and saves the model for you), you have the additional option to run the model pipeline offline in development setting. First, download the ingested data from s3:
 ```sh
 make modeling_data
 ```
@@ -151,33 +195,10 @@ In lieu of running the individual commands in <b>Step 2-3 and Step 6</b>, you ma
 ```sh
 make app_init
 ```
+Note that this step uses an RDS database.
+
 During the development phase, after you finish running the app, you may remove your RDS table, your docker containers and images with the following command:
 ```sh
 make app_reset
 ```
-However, this step is not recommended once app is out in public.
-
-
-## Directory structure 
-
-```
-├── README.md                         <- You are here
-├── app
-│   ├── static/                       <- CSS, JS files that remain static
-│   ├── templates/                    <- HTML (or other code) that is templated and changes based on a set of inputs
-│
-├── config                            <- Directory for configuration files 
-│   ├── flaskconfig.py                <- Configurations for Flask API 
-│
-├── data                              <- Folder that contains data used or generated. Not tracked by git. 
-│
-├── deliverables/                     <- Any white papers, presentations, final work products that are presented or delivered to a stakeholder 
-│
-├── src/                              <- Source data for the project 
-│
-├── test/                             <- Files necessary for running model tests (see documentation below) 
-│
-├── app.py                            <- Flask wrapper for running the model 
-├── run.py                            <- Simplifies the execution of one or more of the src scripts  
-├── requirements.txt                  <- Python package dependencies 
-```
+Please do not execute this command in production setting unless you are tearing down the app.
