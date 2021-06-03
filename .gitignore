@@ -15,3 +15,5 @@ config/local
 !.gitkeep
 test/*.csv
 Dockerfile_ec2
+app/Dockerfile
+app/boot.sh
