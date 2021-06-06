@@ -5,7 +5,7 @@
     {% if filestring %}
         <b>Your profile:</b><br>
         {% if current_user.age %}
-            <tr><b>Age:</b> {{ user.age }}</tr><br>
+            <tr><b>Age:</b> {{ current_user.age }}</tr><br>
         {% endif %}
         {% if current_user.image %}
             <img src="data:image/jpg;base64, {{ filestring }}" alt="alternate" /><br>

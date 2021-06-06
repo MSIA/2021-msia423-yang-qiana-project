@@ -150,7 +150,7 @@ class SurveyManager(Ingest):
         metadata = data.iloc[:, 164:].values
 
         # reformat data - just the first 100 records for upload
-        records = [UserData(name=f'Fake Brian Rice {i}',
+        records = [UserData(name=f'anonymous user {i}',
                             password='00000',
                             factor1=float(pca_features[i][0]),
                             factor2=float(pca_features[i][1]),
