@@ -45,6 +45,7 @@ We can measure the business value of the app based on user acquisition rates, ch
 ├── data                              <- Folder that contains data used or generated. Not tracked by git. 
 │
 ├── deliverables/                     <- App presentation slides.
+│   ├── MSiA_presentation.pdf         <- Final presentation slides.
 │
 ├── src/                              <- Source files for the app 
 │   ├── create_db.py                  <- Python objects to create database instance, generate schema, and manipulate records for the app
