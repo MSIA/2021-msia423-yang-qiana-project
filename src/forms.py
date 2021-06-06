@@ -152,7 +152,7 @@ class Registration(FlaskForm):
     C6 = RadioField(label='I have frequent mood swings.', **args)
     B5 = RadioField(label='I learn quickly.', **args)
     M7 = RadioField(label='I rarely look for a deeper meaning in things.', **args)
-    H1 = RadioField(label='I like ot read.', **args)
+    H1 = RadioField(label='I like to read.', **args)
     K5 = RadioField(label='I keep my thoughts to myself.', **args)
     M10 = RadioField(label='I try to avoid complex people.', **args)
     K1 = RadioField(label='I reveal little about myself.', **args)
