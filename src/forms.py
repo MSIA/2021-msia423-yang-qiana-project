@@ -1,10 +1,11 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileAllowed, FileRequired
+from flask_wtf.file import FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, RadioField, IntegerField, FileField
 from wtforms.validators import DataRequired, EqualTo, Optional
 
-class Registration(FlaskForm):
 
+class Registration(FlaskForm):
+    """Registration form"""
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
@@ -184,8 +185,8 @@ class Registration(FlaskForm):
     submit = SubmitField('Register')
 
 
-# login setup
 class LoginForm(FlaskForm):
+    """Login form"""
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Sign in')

@@ -11,7 +11,7 @@ from src.modeling import OfflineModeling
 from src.ingest import Ingest
 
 Base = declarative_base()
-logger = logging.getLogger('create_db')
+logger = logging.getLogger(__name__)
 
 
 class UserData(UserMixin, Base):
