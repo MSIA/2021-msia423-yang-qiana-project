@@ -3,6 +3,8 @@ from sklearn.cluster import KMeans
 from config.flaskconfig import logging
 import yaml
 
+logger = logging.getLogger(__name__)
+
 
 class OfflineModeling:
 
@@ -25,11 +27,11 @@ class OfflineModeling:
         # fit and transform raw survey data with factor analysis
         self.fa.fit(survey)
         arrays = self.fa.transform(survey)
-        logging.info('survey questions are now transformed into 12 latent variables.')
+        logger.info('survey questions are now transformed into 12 latent variables.')
 
         # fit cluster analysis model on raw survey data with reduced dimensions
         self.ca.fit(arrays)
         clusters = self.ca.labels_
-        logging.info('users in the raw seed dataset are now assigned to 10 clusters.')
+        logger.info('users in the raw seed dataset are now assigned to 10 clusters.')
 
         return arrays, clusters

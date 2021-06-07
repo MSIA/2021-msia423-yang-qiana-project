@@ -10,7 +10,7 @@ import botocore.exceptions
 
 from config.flaskconfig import logging, DATA_SOURCE, S3_BUCKET, DATA_PATH, CODEBOOK_PATH, FA_PATH, CA_PATH
 
-logger = logging.getLogger('ingest')
+logger = logging.getLogger(__name__)
 
 
 class Ingest:
