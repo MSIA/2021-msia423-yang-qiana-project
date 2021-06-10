@@ -1,17 +1,17 @@
+import re
+from base64 import b64encode
+import pandas as pd
+
 from flask import Flask, render_template, redirect, flash, url_for, request
 from flask_login import LoginManager, current_user, login_user, login_required, logout_user
 from werkzeug.urls import url_parse
 from wtforms.validators import ValidationError
+from sqlalchemy.sql import text
 
 from src.create_db import UserData, SurveyManager
-from src.forms import Registration as Registration
-from src.forms import LoginForm as LoginForm
+from src.forms import Registration
+from src.forms import LoginForm
 from config.flaskconfig import MAX_ROWS_SHOW
-
-import pandas as pd
-import re
-from sqlalchemy.sql import text
-from base64 import b64encode
 
 # default template_folder path is 'templates' in root directory if no template folder is specified
 app = Flask(__name__, template_folder='app/templates', static_folder="app/static")
@@ -22,8 +22,15 @@ login.login_view = 'login'
 
 
 class RegistrationForm(Registration):
+    """Update registration form with validation functionality."""
 
     def validate_username(self, username):
+        """Validate username.
+        Args:
+            username: :obj: FlaskForm StringField - custom-set username
+
+        Returns: None
+        """
         user = sm.session.query(UserData).filter_by(name=username.data).first()
         if user is not None:
             raise ValidationError('Please use a different username.')
@@ -31,12 +38,24 @@ class RegistrationForm(Registration):
             raise ValidationError('Username cannot be longer than 50 characters.')
 
     def validate_password(self, password):
+        """Validates password.
+        Args:
+            password: :obj: FlaskForm PasswordField - custom-set password
+
+        Returns: None
+        """
         if len(password.data) > 32:
             raise ValidationError('Password cannot be longer than 32 characters.')
 
 
 @login.user_loader
 def user_loader(id):
+    """Load user.
+    Args:
+        id: int - user id
+
+    Returns: None
+    """
     return sm.session.query(UserData).get(int(id))
 
 
@@ -44,6 +63,7 @@ def user_loader(id):
 @app.route('/index')
 @login_required
 def index():
+    """Index page/homepage."""
     norm = current_user.factor1 ** 2 + \
            current_user.factor2 ** 2 + \
            current_user.factor3 ** 2 + \
@@ -73,7 +93,9 @@ def index():
                  f'factor7 * factor7 + factor8 * factor8 + factor9 * factor9 + '
                  f'factor10 * factor10 + factor11 * factor11 + factor12 * factor12)'
                  f' * SQRT({norm})) AS cosine, name, age, image, '
-                 f'CASE WHEN gender = 1 THEN "Male" WHEN gender = 2 THEN "Female" WHEN gender = 3 THEN "Non-binary" '
+                 f'CASE WHEN gender = 1 THEN "Male" '
+                 f'WHEN gender = 2 THEN "Female" '
+                 f'WHEN gender = 3 THEN "Non-binary" '
                  f'ELSE NULL END AS sex '
                  f'FROM user_data '
                  f'WHERE cluster = {current_user.cluster} AND id <> {current_user.id} '
@@ -86,6 +108,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Login page."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = LoginForm()
@@ -106,12 +129,14 @@ def login():
 
 @app.route('/logout')
 def logout():
+    """Logout page."""
     logout_user()
     return redirect(url_for('login'))
 
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """Registration page."""
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     form = RegistrationForm()
@@ -121,12 +146,12 @@ def register():
         file = form.photo.data
         if file:
             file_string = b64encode(file.read()).decode('utf-8')
-            app.logger.debug(f'file type: {type(file_string)}, file length: {len(file_string)}')
         # organize survey data into np.array
-        raw_data = {field.label.field_id: [field.data] for field in form if re.match('^[A-Z]', field.label.field_id)}
+        raw_data = {field.label.field_id: [field.data] for field in form if
+                    re.match('^[A-Z]', field.label.field_id)}
         raw_data = {key: value if value != [None] else [0] for key, value in raw_data.items()}
         raw_df = pd.DataFrame.from_dict(raw_data, orient='columns')
-        app.logger.debug(f'Raw_df created from user input: {raw_df}')
+        app.logger.debug('Raw_df created from user input.')
         # add new user record
         sm.add_user_record(username=form.username.data,
                            password=form.password.data,

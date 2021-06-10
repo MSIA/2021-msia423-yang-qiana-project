@@ -9,7 +9,7 @@ fa, ca = ingest.download_model_from_s3()
 
 
 def test_cluster_happy():
-
+    """test generated clusters are the same for models saved in s3 and newly trained models."""
     # training
     models = OfflineModeling()
     models.fa.fit(data.iloc[:, 1:164])
@@ -29,6 +29,6 @@ def test_cluster_happy():
 
 
 def test_cluster_unhappy():
-
+    """Test data with wrong dimensions generate error."""
     with pytest.raises(ValueError):
         fa.transform(data)

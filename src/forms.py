@@ -11,11 +11,14 @@ class Registration(FlaskForm):
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
     age = IntegerField(label='Age', default=0, validators=[Optional()])
-    gender = RadioField(label='Gender', choices=[(1, 'Male'), (2, 'Female'), (3, 'Other')], coerce=int,
+    gender = RadioField(label='Gender',
+                        choices=[(1, 'Male'), (2, 'Female'), (3, 'Other')],
+                        coerce=int,
                         validators=[Optional()])
     photo = FileField('Photo', validators=[FileAllowed(['jpg', 'png'], 'Images only!')])
 
-    args = {'choices': [(1, 'strongly disagree'), (2, 'disagree'), (3, 'neither disagree nor agree'),
+    args = {'choices': [(1, 'strongly disagree'), (2, 'disagree'),
+                        (3, 'neither disagree nor agree'),
                         (4, 'agree'), (5, 'strongly agree')],
             'coerce': int, 'validators': [Optional()]}
     A7 = RadioField(label='I take time out for others.', **args)

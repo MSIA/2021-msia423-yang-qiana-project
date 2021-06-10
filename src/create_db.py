@@ -48,17 +48,18 @@ def create_new_db():
     try:
         engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URI)
         Base.metadata.create_all(engine)
-        logger.warning(f'If a user_data table already exists, new schema will not be created.'
-                       f'Check mysql database to ensure user_data does not exist.')
-        logger.info(f"database created at {SQLALCHEMY_DATABASE_URI}.")
+        logger.warning('If a user_data table already exists, new schema will not be created.'
+                       'Check mysql database to ensure user_data does not exist.')
+        logger.info("database created with given engine string credentials.")
     except sqlalchemy.exc.OperationalError:
         # Checking for correct credentials
-        logger.error(f"create_db: Access to {SQLALCHEMY_DATABASE_URI} denied! Please enter correct credentials or "
-                     f"check your VPN.")
+        logger.error("create_db: Access to database denied! "
+                     "Please enter correct credentials or "
+                     "check your VPN.")
 
 
 class SurveyManager(Ingest):
-
+    """Class that interacts with specified database in engine string."""
     def __init__(self, app=None, engine_string=SQLALCHEMY_DATABASE_URI):
         """
         Args:
@@ -176,14 +177,16 @@ class SurveyManager(Ingest):
             session.commit()
             logging.info('records committed to database.')
         except AttributeError:
-            logging.error('Something went wrong. Datatype(s) of input feature(s) may be incompatible with datatypes '
-                          'in schema.')
+            logging.error('Something went wrong. Datatype(s) of input feature(s) may be'
+                          ' incompatible with datatypes in schema.')
             session.rollback()
         except IntegrityError:
-            logging.error('New records trespass schema restrictions. Maybe you are trying to upload a primary key '
-                          'that already exists or insert NA values in a non-nullable column.')
+            logging.error('New records trespass schema restrictions. '
+                          'Maybe you are trying to upload a primary key '
+                          'that already exists or insert NA values '
+                          'in a non-nullable column.')
             session.rollback()
         except InternalError:
-            logging.error('New record contains elements that mysql does not recognize. Maybe you have np.nan in a '
-                          'column with type str.')
+            logging.error('New record contains elements that mysql does not recognize. '
+                          'Maybe you have np.nan in a column with type str.')
             session.rollback()

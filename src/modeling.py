@@ -1,13 +1,13 @@
 from factor_analyzer.factor_analyzer import FactorAnalyzer
 from sklearn.cluster import KMeans
-from config.flaskconfig import logging
 import yaml
+from config.flaskconfig import logging
 
 logger = logging.getLogger(__name__)
 
 
 class OfflineModeling:
-
+    """Class for offline modeling for deployment in production setting"""
     def __init__(self):
 
         with open('config/modeling.yaml', 'r') as f:
