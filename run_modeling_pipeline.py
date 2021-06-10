@@ -18,7 +18,8 @@ if __name__ == '__main__':
     sb_download.add_argument("-o", '--output', default=None, help="local_output_filepath")
 
     # Sub-parser for generating features
-    sb_fa = subparsers.add_parser("generate_features", description="generate features with factor analysis")
+    sb_fa = subparsers.add_parser("generate_features",
+                                  description="generate features with factor analysis")
     sb_fa.add_argument("-i", '--input', default=None, help="local_input_filepath")
     sb_fa.add_argument("-o", '--output', default=None, help="local_output_filepath")
 
@@ -48,9 +49,9 @@ if __name__ == '__main__':
         data = pd.read_csv(args.input).values
         model.ca.fit(data)
         clusters = model.ca.labels_
-        logger.info(f'Generated clusters: {clusters[:5]}')
+        logger.info('Clusters generated.')
         output = None
 
     if args.output:
         output.to_csv(args.output, index=False)
-        logger.info(f'Output saved to {args.output}.')
+        logger.info('Output saved to %s.', args.output)
